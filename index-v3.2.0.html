@@ -1,0 +1,291 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>末日防线：代号曙光 v3.2.0</title>
+    <style>
+        :root { --neon-blue: #00f3ff; --neon-purple: #bc13fe; --neon-orange: #ff6b35; --neon-red: #ff4444; --neon-green: #00ff88; --glass-bg: rgba(20,30,40,0.85); --text-secondary: #a0a0a0; }
+        * { margin: 0; padding: 0; box-sizing: border-box; user-select: none; }
+        body { font-family: Arial, sans-serif; background: linear-gradient(135deg, #0a0a0f, #1a1a2e); color: white; overflow: hidden; width: 100vw; height: 100vh; }
+        #game-container { position: relative; width: 100%; height: 100%; }
+        .screen { position: absolute; top: 0; left: 0; width: 100%; height: 100%; display: none; }
+        .screen.active { display: flex; }
+        
+        /* 加载界面 */
+        #loading-screen { justify-content: center; align-items: center; }
+        .loading-content { text-align: center; padding: 40px; }
+        .game-title { font-size: 48px; background: linear-gradient(135deg, var(--neon-blue), var(--neon-purple)); -webkit-background-clip: text; -webkit-text-fill-color: transparent; margin-bottom: 40px; }
+        .loading-bar { width: 300px; height: 8px; background: rgba(255,255,255,0.1); border-radius: 4px; overflow: hidden; margin: 20px auto; border: 1px solid rgba(0,243,255,0.3); }
+        .loading-progress { width: 0%; height: 100%; background: linear-gradient(90deg, var(--neon-blue), var(--neon-purple)); transition: width 0.3s; }
+        .loading-text { color: var(--text-secondary); font-size: 16px; margin-top: 15px; }
+        
+        /* 主界面 */
+        #main-menu { background: radial-gradient(circle at 20% 80%, rgba(188,19,254,0.15), transparent 50%), radial-gradient(circle at 80% 20%, rgba(0,243,255,0.15), transparent 50%); flex-direction: column; justify-content: center; align-items: center; }
+        .menu-content { position: relative; z-index: 10; width: 100%; height: 100%; display: flex; flex-direction: column; justify-content: center; align-items: center; padding: 20px; }
+        .game-title-glow { font-size: 52px; background: linear-gradient(135deg, var(--neon-blue), var(--neon-purple)); -webkit-background-clip: text; -webkit-text-fill-color: transparent; margin-bottom: 10px; }
+        .subtitle { font-size: 18px; color: var(--neon-blue); letter-spacing: 8px; margin-bottom: 40px; text-transform: uppercase; }
+        .player-info { background: var(--glass-bg); border: 1px solid rgba(0,243,255,0.3); border-radius: 12px; padding: 20px 30px; margin-bottom: 30px; min-width: 280px; }
+        .info-row { display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid rgba(255,255,255,0.1); }
+        .info-row:last-child { border-bottom: none; }
+        .info-row .label { color: var(--text-secondary); font-size: 14px; }
+        .info-row .value { color: white; font-weight: bold; font-size: 16px; }
+        .info-row .value.currency { color: var(--neon-orange); }
+        .menu-buttons { display: flex; flex-direction: column; gap: 15px; width: 100%; max-width: 320px; }
+        .btn { padding: 18px 60px; font-size: 22px; font-weight: bold; border: none; border-radius: 8px; cursor: pointer; text-transform: uppercase; letter-spacing: 2px; margin: 5px; }
+        .btn-primary { background: linear-gradient(135deg, var(--neon-blue), var(--neon-purple)); color: white; box-shadow: 0 0 20px rgba(0,243,255,0.4); }
+        .btn-primary:hover { transform: translateY(-2px); box-shadow: 0 0 30px rgba(0,243,255,0.6); }
+        .btn-secondary { background: var(--glass-bg); color: white; border: 2px solid var(--neon-blue); }
+        .btn-secondary:hover { background: rgba(0,243,255,0.15); border-color: var(--neon-blue); transform: translateY(-2px); }
+        .version { position: absolute; bottom: 20px; right: 20px; color: var(--text-secondary); font-size: 12px; opacity: 0.6; }
+        
+        /* 其他场景 */
+        .btn-back { position: absolute; top: 20px; left: 20px; z-index: 100; width: 50px; height: 50px; border-radius: 50%; background: rgba(0,243,255,0.2); border: 2px solid var(--neon-blue); color: var(--neon-blue); font-size: 24px; cursor: pointer; display: flex; align-items: center; justify-content: center; }
+        .scene-title { font-size: 42px; background: linear-gradient(135deg, var(--neon-blue), var(--neon-purple)); -webkit-background-clip: text; -webkit-text-fill-color: transparent; margin-bottom: 40px; text-align: center; }
+        .scene-content { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 80px 20px 20px; width: 100%; max-width: 600px; margin: 0 auto; }
+        .feature-card { background: var(--glass-bg); border: 1px solid rgba(0,243,255,0.3); border-radius: 16px; padding: 30px; margin: 15px; width: 100%; text-align: center; }
+        .feature-card h3 { color: var(--neon-blue); margin-bottom: 15px; font-size: 24px; }
+        .feature-card p { color: var(--text-secondary); line-height: 1.6; }
+        
+        /* 战斗画布 */
+        #game-canvas { display: none; background: linear-gradient(180deg, #1a1a2e 0%, #0a0a0f 100%); }
+        #game-canvas.active { display: block; }
+        
+        /* 战斗 UI */
+        #battle-ui { display: none; position: absolute; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; }
+        #battle-ui.active { display: block; }
+        .ui-top { position: absolute; top: 10px; left: 10px; right: 10px; display: flex; justify-content: space-between; align-items: flex-start; }
+        .hp-bar { width: 200px; height: 20px; background: rgba(0,0,0,0.5); border: 2px solid #333; border-radius: 10px; overflow: hidden; }
+        .hp-fill { height: 100%; background: linear-gradient(90deg, var(--neon-red), var(--neon-orange)); transition: width 0.3s; }
+        .wave-info { text-align: center; }
+        .wave-num { font-size: 24px; font-weight: bold; color: var(--neon-blue); }
+        .wave-label { font-size: 12px; color: #888; }
+        .score-info { text-align: right; }
+        .score-num { font-size: 20px; color: var(--neon-orange); }
+        
+        /* 经验条 */
+        .exp-bar-container { position: absolute; bottom: 20px; left: 50%; transform: translateX(-50%); width: 400px; }
+        .exp-bar { width: 100%; height: 12px; background: rgba(0,0,0,0.5); border: 2px solid #333; border-radius: 6px; overflow: hidden; }
+        .exp-fill { height: 100%; background: linear-gradient(90deg, var(--neon-purple), var(--neon-blue)); transition: width 0.3s; }
+        .exp-text { text-align: center; font-size: 12px; color: white; margin-top: 5px; }
+        
+        .btn-pause { position: absolute; top: 10px; right: 10px; width: 40px; height: 40px; background: rgba(0,243,255,0.2); border: 2px solid var(--neon-blue); border-radius: 8px; color: var(--neon-blue); font-size: 20px; cursor: pointer; pointer-events: auto; }
+        
+        /* 升级/选择弹窗 */
+        #levelup-modal, #start-select-modal { display: none; position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.9); justify-content: center; align-items: center; pointer-events: auto; z-index: 2000; }
+        #levelup-modal.active, #start-select-modal.active { display: flex; }
+        .levelup-content { text-align: center; max-width: 900px; }
+        .levelup-title { font-size: 56px; color: var(--neon-orange); margin-bottom: 10px; text-shadow: 0 0 20px var(--neon-orange); }
+        .levelup-subtitle { font-size: 24px; color: var(--neon-blue); margin-bottom: 40px; }
+        .skill-cards { display: flex; gap: 20px; justify-content: center; flex-wrap: wrap; }
+        .skill-card { width: 260px; background: var(--glass-bg); border: 3px solid var(--neon-blue); border-radius: 16px; padding: 25px; cursor: pointer; transition: all 0.3s; position: relative; overflow: hidden; }
+        .skill-card:hover { transform: translateY(-10px); box-shadow: 0 0 30px rgba(0,243,255,0.6); border-color: var(--neon-orange); }
+        .skill-card.common { border-color: #b0b0b0; }
+        .skill-card.rare { border-color: #5e9eff; }
+        .skill-card.epic { border-color: var(--neon-purple); }
+        .skill-card.legendary { border-color: var(--neon-orange); box-shadow: 0 0 20px rgba(255,107,53,0.4); }
+        .skill-icon { font-size: 48px; margin-bottom: 15px; }
+        .skill-name { font-size: 22px; font-weight: bold; color: white; margin-bottom: 10px; }
+        .skill-desc { font-size: 14px; color: var(--text-secondary); line-height: 1.5; margin-bottom: 15px; }
+        .skill-rarity { font-size: 12px; text-transform: uppercase; letter-spacing: 2px; }
+        .skill-card.common .skill-rarity { color: #b0b0b0; }
+        .skill-card.rare .skill-rarity { color: #5e9eff; }
+        .skill-card.epic .skill-rarity { color: var(--neon-purple); }
+        .skill-card.legendary .skill-rarity { color: var(--neon-orange); }
+        
+        /* 暂停/结束菜单 */
+        #pause-menu, #gameover-menu { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.85); display: none; justify-content: center; align-items: center; pointer-events: auto; z-index: 1000; }
+        .pause-content, .gameover-content { text-align: center; }
+        .pause-title { font-size: 48px; color: var(--neon-blue); margin-bottom: 40px; }
+        .gameover-title { font-size: 56px; color: var(--neon-red); margin-bottom: 20px; }
+        .pause-btn { display: block; width: 200px; padding: 15px; margin: 10px auto; background: var(--glass-bg); border: 2px solid var(--neon-blue); border-radius: 8px; color: white; font-size: 18px; cursor: pointer; }
+        .pause-btn:hover { background: rgba(0,243,255,0.2); }
+        .gameover-stats { font-size: 24px; margin: 20px 0; color: #888; }
+        
+        /* 自动攻击提示 */
+        .auto-aim-indicator { position: absolute; bottom: 60px; left: 50%; transform: translateX(-50%); font-size: 14px; color: var(--neon-green); text-align: center; }
+    </style>
+</head>
+<body>
+    <div id="game-container">
+        <!-- 加载界面 -->
+        <div id="loading-screen" class="screen active">
+            <div class="loading-content">
+                <h1 class="game-title">末日防线：代号曙光</h1>
+                <div class="loading-bar"><div class="loading-progress" id="loading-progress"></div></div>
+                <p class="loading-text" id="loading-text">初始化中...</p>
+            </div>
+        </div>
+
+        <!-- 主界面 -->
+        <div id="main-menu" class="screen">
+            <div class="menu-content">
+                <h1 class="game-title-glow">末日防线：代号曙光</h1>
+                <p class="subtitle">PROJECT: DAWN</p>
+                <div class="player-info">
+                    <div class="info-row"><span class="label">指挥官等级:</span><span class="value" id="player-level">1</span></div>
+                    <div class="info-row"><span class="label">信用点:</span><span class="value currency" id="player-gold">1000</span></div>
+                    <div class="info-row"><span class="label">晶体:</span><span class="value currency" id="player-diamond">100</span></div>
+                </div>
+                <div class="menu-buttons">
+                    <button class="btn btn-primary" id="btn-start">开始战斗</button>
+                    <button class="btn btn-secondary" id="btn-upgrade">强化系统</button>
+                    <button class="btn btn-secondary" id="btn-shop">补给站</button>
+                    <button class="btn btn-secondary" id="btn-settings">系统设置</button>
+                </div>
+                <div class="version">v3.2.0</div>
+            </div>
+        </div>
+
+        <!-- 强化系统 -->
+        <div id="upgrade-screen" class="screen">
+            <button class="btn-back" onclick="Scene.back()">←</button>
+            <div class="scene-content">
+                <h2 class="scene-title">强化系统</h2>
+                <div class="feature-card"><h3>🔧 技能升级</h3><p>消耗技能点数提升技能等级<br>当前可用点数：<span style="color:var(--neon-orange)">10</span></p></div>
+                <div class="feature-card"><h3>💎 核心镶嵌</h3><p>为技能安装核心，改变技能机制<br>已解锁核心：0/5</p></div>
+                <div class="feature-card"><h3>⚡ 属性强化</h3><p>永久提升基础属性<br>当前加成：+0%</p></div>
+            </div>
+        </div>
+
+        <!-- 商店 -->
+        <div id="shop-screen" class="screen">
+            <button class="btn-back" onclick="Scene.back()">←</button>
+            <div class="scene-content">
+                <h2 class="scene-title">补给站</h2>
+                <div class="feature-card"><h3>🛒 每日礼包</h3><p>每日限购一次<br>价格：50 晶体</p></div>
+                <div class="feature-card"><h3>🎁 成长基金</h3><p>达到指定等级领取奖励<br>已领取：0/10</p></div>
+                <div class="feature-card"><h3>💰 充值中心</h3><p>首充双倍，限时优惠<br>当前晶体：<span style="color:var(--neon-orange)">100</span></p></div>
+            </div>
+        </div>
+
+        <!-- 设置 -->
+        <div id="settings-screen" class="screen">
+            <button class="btn-back" onclick="Scene.back()">←</button>
+            <div class="scene-content">
+                <h2 class="scene-title">系统设置</h2>
+                <div class="feature-card"><h3>🔊 音效设置</h3><p>背景音乐：<input type="range" min="0" max="100" value="70"></p><p>音效音量：<input type="range" min="0" max="100" value="100"></p></div>
+                <div class="feature-card"><h3>📱 画面设置</h3><p>画质：<select><option>高清</option><option>标准</option></select></p><p>帧率：<select><option>60 FPS</option><option>30 FPS</option></select></p></div>
+                <div class="feature-card"><h3>💾 数据管理</h3><button class="btn btn-secondary" style="margin:5px" onclick="alert('进度已保存')">保存进度</button></div>
+            </div>
+        </div>
+
+        <!-- 游戏画布 -->
+        <canvas id="game-canvas"></canvas>
+        
+        <!-- 战斗 UI -->
+        <div id="battle-ui">
+            <div class="ui-top">
+                <div><div class="hp-bar"><div class="hp-fill" id="base-hp" style="width:100%"></div></div><div style="font-size:12px;color:#888;margin-top:5px">基地血量</div></div>
+                <div class="wave-info"><div class="wave-num" id="wave-num">1</div><div class="wave-label">WAVE</div></div>
+                <div class="score-info"><div class="score-num" id="score">0</div><div style="font-size:12px;color:#888">KILLS</div></div>
+            </div>
+            <button class="btn-pause" id="btn-pause">⏸</button>
+            
+            <!-- 经验条 -->
+            <div class="exp-bar-container">
+                <div class="exp-bar"><div class="exp-fill" id="exp-fill" style="width:0%"></div></div>
+                <div class="exp-text" id="exp-text">LV.1 0/100</div>
+            </div>
+            
+            <!-- 自动攻击提示 -->
+            <div class="auto-aim-indicator">🎯 自动锁定 + 自动射击</div>
+        </div>
+
+        <!-- 开局选择弹窗 -->
+        <div id="start-select-modal">
+            <div class="levelup-content">
+                <div class="levelup-title">选择初始道具</div>
+                <div class="levelup-subtitle">选择一个开始战斗</div>
+                <div class="skill-cards" id="start-skill-cards"></div>
+            </div>
+        </div>
+
+        <!-- 升级弹窗 -->
+        <div id="levelup-modal">
+            <div class="levelup-content">
+                <div class="levelup-title">LEVEL UP!</div>
+                <div class="levelup-subtitle" id="levelup-level">当前等级：2</div>
+                <div class="skill-cards" id="skill-cards"></div>
+            </div>
+        </div>
+
+        <!-- 暂停菜单 -->
+        <div id="pause-menu">
+            <div class="pause-content">
+                <div class="pause-title">已暂停</div>
+                <button class="pause-btn" onclick="Battle.resume()">继续战斗</button>
+                <button class="pause-btn" onclick="Battle.restart()">重新开始</button>
+                <button class="pause-btn" onclick="Battle.quit()">返回主菜单</button>
+            </div>
+        </div>
+
+        <!-- 游戏结束 -->
+        <div id="gameover-menu">
+            <div class="gameover-content">
+                <div class="gameover-title">GAME OVER</div>
+                <div class="gameover-stats"><div>波次：<span id="final-wave" style="color:var(--neon-blue)">0</span></div><div>击杀：<span id="final-score" style="color:var(--neon-orange)">0</span></div><div>最高等级：<span id="final-level" style="color:var(--neon-purple)">0</span></div></div>
+                <button class="pause-btn" onclick="Battle.restart()">再次挑战</button>
+                <button class="pause-btn" onclick="Battle.quit()">返回主菜单</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="scripts/rogue-system-v2.js"></script>
+    <script>
+        var Scene = {
+            currentScene: 'loading', history: [],
+            switchTo: function(id) {
+                var screens = document.querySelectorAll('.screen');
+                for (var i = 0; i < screens.length; i++) screens[i].classList.remove('active');
+                if (this.currentScene !== id) this.history.push(this.currentScene);
+                var target = document.getElementById(id);
+                if (target) { target.classList.add('active'); this.currentScene = id; }
+            },
+            back: function() { if (this.history.length > 0) this.switchTo(this.history.pop()); }
+        };
+
+        var GameData = {
+            data: null,
+            init: function() {
+                try { var saved = localStorage.getItem('dawn_save'); this.data = saved ? JSON.parse(atob(saved)).data : this.createDefault(); }
+                catch(e) { this.data = this.createDefault(); }
+                return this.data;
+            },
+            createDefault: function() { return { level: 1, exp: 0, resources: { gold: 1000, diamond: 100, skillToken: 10 } }; },
+            updateUI: function() {
+                document.getElementById('player-level').textContent = this.data.level;
+                document.getElementById('player-gold').textContent = this.data.resources.gold.toLocaleString();
+                document.getElementById('player-diamond').textContent = this.data.resources.diamond.toLocaleString();
+            }
+        };
+
+        var Battle = null;
+
+        var Game = {
+            init: function() {
+                var self = this;
+                document.getElementById('loading-progress').style.width = '20%';
+                document.getElementById('loading-text').textContent = '加载玩家数据...';
+                GameData.init();
+                setTimeout(function() { document.getElementById('loading-progress').style.width = '50%'; document.getElementById('loading-text').textContent = '初始化战斗系统...'; RogueSystem.init(); Battle = RogueSystem; }, 300);
+                setTimeout(function() { document.getElementById('loading-progress').style.width = '80%'; document.getElementById('loading-text').textContent = '加载完成'; }, 600);
+                setTimeout(function() {
+                    document.getElementById('loading-progress').style.width = '100%';
+                    document.getElementById('loading-text').textContent = '启动游戏...';
+                    setTimeout(function() { Scene.switchTo('main-menu'); GameData.updateUI(); self.bindEvents(); Battle.gameLoop(); }, 300);
+                }, 900);
+            },
+            bindEvents: function() {
+                document.getElementById('btn-start').onclick = function() { Battle.showStartSelect(); };
+                document.getElementById('btn-upgrade').onclick = function() { Scene.switchTo('upgrade-screen'); };
+                document.getElementById('btn-shop').onclick = function() { Scene.switchTo('shop-screen'); };
+                document.getElementById('btn-settings').onclick = function() { Scene.switchTo('settings-screen'); };
+                document.getElementById('btn-pause').onclick = function() { Battle.pause(); };
+            }
+        };
+
+        window.onload = function() { Game.init(); };
+    </script>
+</body>
+</html>

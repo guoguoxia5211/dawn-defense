@@ -1,9 +1,10 @@
 {
-  "prompt": "Cyberpunk sci-fi game background, futuristic abandoned high-tech city, neon lights in purple blue and orange, circuit pattern ground, holographic billboard ruins, dark atmosphere, 2.5D isometric view, mobile game art style, high saturation, metallic gray tones, digital art, 4K quality",
-  "negative_prompt": "characters, people, text, watermark, low quality, blurry",
+  "prompt": "Cyberpunk sci-fi game background, futuristic abandoned high-tech city ruins, neon lights purple blue orange, circuit pattern ground texture, holographic billboard debris, dark atmosphere, 2.5D isometric view, mobile game art style, high saturation, metallic gray tones, digital art, 4K quality, no characters, no text",
+  "negative_prompt": "people, characters, text, watermark, low quality, blurry, distorted",
   "width": 1080,
   "height": 1920,
   "steps": 30,
   "cfg_scale": 7,
-  "seed": 42
+  "seed": 42,
+  "usage": "main-menu-background"
 }

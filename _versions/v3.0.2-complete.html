@@ -1,0 +1,378 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>末日防线：代号曙光 v3.0.2</title>
+    <style>
+        :root { --neon-blue: #00f3ff; --neon-purple: #bc13fe; --neon-orange: #ff6b35; --neon-red: #ff4444; --neon-green: #00ff88; --glass-bg: rgba(20,30,40,0.85); --text-secondary: #a0a0a0; }
+        * { margin: 0; padding: 0; box-sizing: border-box; user-select: none; }
+        body { font-family: Arial, sans-serif; background: linear-gradient(135deg, #0a0a0f, #1a1a2e); color: white; overflow: hidden; width: 100vw; height: 100vh; }
+        #game-container { position: relative; width: 100%; height: 100%; }
+        
+        /* 通用屏幕 */
+        .screen { position: absolute; top: 0; left: 0; width: 100%; height: 100%; display: none; }
+        .screen.active { display: flex; }
+        
+        /* 加载界面 */
+        #loading-screen { justify-content: center; align-items: center; }
+        .loading-content { text-align: center; padding: 40px; }
+        .game-title { font-size: 48px; background: linear-gradient(135deg, var(--neon-blue), var(--neon-purple)); -webkit-background-clip: text; -webkit-text-fill-color: transparent; margin-bottom: 40px; }
+        .loading-bar { width: 300px; height: 8px; background: rgba(255,255,255,0.1); border-radius: 4px; overflow: hidden; margin: 20px auto; border: 1px solid rgba(0,243,255,0.3); }
+        .loading-progress { width: 0%; height: 100%; background: linear-gradient(90deg, var(--neon-blue), var(--neon-purple)); transition: width 0.3s; }
+        .loading-text { color: var(--text-secondary); font-size: 16px; margin-top: 15px; }
+        
+        /* 主界面 */
+        #main-menu { background: radial-gradient(circle at 20% 80%, rgba(188,19,254,0.15), transparent 50%), radial-gradient(circle at 80% 20%, rgba(0,243,255,0.15), transparent 50%); flex-direction: column; justify-content: center; align-items: center; }
+        .menu-content { position: relative; z-index: 10; width: 100%; height: 100%; display: flex; flex-direction: column; justify-content: center; align-items: center; padding: 20px; }
+        .game-title-glow { font-size: 52px; background: linear-gradient(135deg, var(--neon-blue), var(--neon-purple)); -webkit-background-clip: text; -webkit-text-fill-color: transparent; margin-bottom: 10px; }
+        .subtitle { font-size: 18px; color: var(--neon-blue); letter-spacing: 8px; margin-bottom: 40px; text-transform: uppercase; }
+        .player-info { background: var(--glass-bg); border: 1px solid rgba(0,243,255,0.3); border-radius: 12px; padding: 20px 30px; margin-bottom: 30px; min-width: 280px; }
+        .info-row { display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid rgba(255,255,255,0.1); }
+        .info-row:last-child { border-bottom: none; }
+        .info-row .label { color: var(--text-secondary); font-size: 14px; }
+        .info-row .value { color: white; font-weight: bold; font-size: 16px; }
+        .info-row .value.currency { color: var(--neon-orange); }
+        .menu-buttons { display: flex; flex-direction: column; gap: 15px; width: 100%; max-width: 320px; }
+        .btn { padding: 18px 60px; font-size: 22px; font-weight: bold; border: none; border-radius: 8px; cursor: pointer; text-transform: uppercase; letter-spacing: 2px; margin: 5px; }
+        .btn-primary { background: linear-gradient(135deg, var(--neon-blue), var(--neon-purple)); color: white; box-shadow: 0 0 20px rgba(0,243,255,0.4); }
+        .btn-primary:hover { transform: translateY(-2px); box-shadow: 0 0 30px rgba(0,243,255,0.6); }
+        .btn-secondary { background: var(--glass-bg); color: white; border: 2px solid var(--neon-blue); }
+        .btn-secondary:hover { background: rgba(0,243,255,0.15); border-color: var(--neon-blue); transform: translateY(-2px); }
+        .version { position: absolute; bottom: 20px; right: 20px; color: var(--text-secondary); font-size: 12px; opacity: 0.6; }
+        
+        /* 其他场景 */
+        .btn-back { position: absolute; top: 20px; left: 20px; z-index: 100; width: 50px; height: 50px; border-radius: 50%; background: rgba(0,243,255,0.2); border: 2px solid var(--neon-blue); color: var(--neon-blue); font-size: 24px; cursor: pointer; display: flex; align-items: center; justify-content: center; }
+        .btn-back:hover { background: rgba(0,243,255,0.4); transform: scale(1.1); }
+        .scene-title { font-size: 42px; background: linear-gradient(135deg, var(--neon-blue), var(--neon-purple)); -webkit-background-clip: text; -webkit-text-fill-color: transparent; margin-bottom: 40px; text-align: center; }
+        .scene-content { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 80px 20px 20px; width: 100%; max-width: 600px; margin: 0 auto; }
+        .feature-card { background: var(--glass-bg); border: 1px solid rgba(0,243,255,0.3); border-radius: 16px; padding: 30px; margin: 15px; width: 100%; text-align: center; }
+        .feature-card h3 { color: var(--neon-blue); margin-bottom: 15px; font-size: 24px; }
+        .feature-card p { color: var(--text-secondary); line-height: 1.6; }
+        
+        /* 战斗画布 */
+        #game-canvas { display: none; background: linear-gradient(180deg, #1a1a2e 0%, #0a0a0f 100%); }
+        #game-canvas.active { display: block; }
+        
+        /* 战斗 UI */
+        #battle-ui { display: none; position: absolute; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; }
+        #battle-ui.active { display: block; }
+        .ui-top { position: absolute; top: 10px; left: 10px; right: 10px; display: flex; justify-content: space-between; align-items: flex-start; }
+        .hp-bar { width: 200px; height: 20px; background: rgba(0,0,0,0.5); border: 2px solid #333; border-radius: 10px; overflow: hidden; }
+        .hp-fill { height: 100%; background: linear-gradient(90deg, var(--neon-red), var(--neon-orange)); transition: width 0.3s; }
+        .wave-info { text-align: center; }
+        .wave-num { font-size: 24px; font-weight: bold; color: var(--neon-blue); }
+        .wave-label { font-size: 12px; color: #888; }
+        .score-info { text-align: right; }
+        .score-num { font-size: 20px; color: var(--neon-orange); }
+        .btn-pause { position: absolute; top: 10px; right: 10px; width: 40px; height: 40px; background: rgba(0,243,255,0.2); border: 2px solid var(--neon-blue); border-radius: 8px; color: var(--neon-blue); font-size: 20px; cursor: pointer; pointer-events: auto; }
+        
+        /* 暂停/结束菜单 */
+        #pause-menu, #gameover-menu { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.85); display: none; justify-content: center; align-items: center; pointer-events: auto; z-index: 1000; }
+        .pause-content, .gameover-content { text-align: center; }
+        .pause-title { font-size: 48px; color: var(--neon-blue); margin-bottom: 40px; }
+        .gameover-title { font-size: 56px; color: var(--neon-red); margin-bottom: 20px; }
+        .pause-btn { display: block; width: 200px; padding: 15px; margin: 10px auto; background: var(--glass-bg); border: 2px solid var(--neon-blue); border-radius: 8px; color: white; font-size: 18px; cursor: pointer; }
+        .pause-btn:hover { background: rgba(0,243,255,0.2); }
+        .gameover-stats { font-size: 24px; margin: 20px 0; color: #888; }
+    </style>
+</head>
+<body>
+    <div id="game-container">
+        <!-- 加载界面 -->
+        <div id="loading-screen" class="screen active">
+            <div class="loading-content">
+                <h1 class="game-title">末日防线：代号曙光</h1>
+                <div class="loading-bar"><div class="loading-progress" id="loading-progress"></div></div>
+                <p class="loading-text" id="loading-text">初始化中...</p>
+            </div>
+        </div>
+
+        <!-- 主界面 -->
+        <div id="main-menu" class="screen">
+            <div class="menu-content">
+                <h1 class="game-title-glow">末日防线：代号曙光</h1>
+                <p class="subtitle">PROJECT: DAWN</p>
+                <div class="player-info">
+                    <div class="info-row"><span class="label">指挥官等级:</span><span class="value" id="player-level">1</span></div>
+                    <div class="info-row"><span class="label">信用点:</span><span class="value currency" id="player-gold">1000</span></div>
+                    <div class="info-row"><span class="label">晶体:</span><span class="value currency" id="player-diamond">100</span></div>
+                </div>
+                <div class="menu-buttons">
+                    <button class="btn btn-primary" id="btn-start">开始战斗</button>
+                    <button class="btn btn-secondary" id="btn-upgrade">强化系统</button>
+                    <button class="btn btn-secondary" id="btn-shop">补给站</button>
+                    <button class="btn btn-secondary" id="btn-settings">系统设置</button>
+                </div>
+                <div class="version">v3.0.2</div>
+            </div>
+        </div>
+
+        <!-- 强化系统 -->
+        <div id="upgrade-screen" class="screen">
+            <button class="btn-back" onclick="Scene.back()">←</button>
+            <div class="scene-content">
+                <h2 class="scene-title">强化系统</h2>
+                <div class="feature-card"><h3>🔧 技能升级</h3><p>消耗技能点数提升技能等级<br>当前可用点数：<span style="color:var(--neon-orange)">10</span></p></div>
+                <div class="feature-card"><h3>💎 核心镶嵌</h3><p>为技能安装核心，改变技能机制<br>已解锁核心：0/5</p></div>
+                <div class="feature-card"><h3>⚡ 属性强化</h3><p>永久提升基础属性<br>当前加成：+0%</p></div>
+            </div>
+        </div>
+
+        <!-- 商店 -->
+        <div id="shop-screen" class="screen">
+            <button class="btn-back" onclick="Scene.back()">←</button>
+            <div class="scene-content">
+                <h2 class="scene-title">补给站</h2>
+                <div class="feature-card"><h3>🛒 每日礼包</h3><p>每日限购一次<br>价格：50 晶体</p></div>
+                <div class="feature-card"><h3>🎁 成长基金</h3><p>达到指定等级领取奖励<br>已领取：0/10</p></div>
+                <div class="feature-card"><h3>💰 充值中心</h3><p>首充双倍，限时优惠<br>当前晶体：<span style="color:var(--neon-orange)">100</span></p></div>
+            </div>
+        </div>
+
+        <!-- 设置 -->
+        <div id="settings-screen" class="screen">
+            <button class="btn-back" onclick="Scene.back()">←</button>
+            <div class="scene-content">
+                <h2 class="scene-title">系统设置</h2>
+                <div class="feature-card"><h3>🔊 音效设置</h3><p>背景音乐：<input type="range" min="0" max="100" value="70"></p><p>音效音量：<input type="range" min="0" max="100" value="100"></p></div>
+                <div class="feature-card"><h3>📱 画面设置</h3><p>画质：<select><option>高清</option><option>标准</option></select></p><p>帧率：<select><option>60 FPS</option><option>30 FPS</option></select></p></div>
+                <div class="feature-card"><h3>💾 数据管理</h3><button class="btn btn-secondary" style="margin:5px" onclick="alert('进度已保存')">保存进度</button></div>
+            </div>
+        </div>
+
+        <!-- 游戏画布 -->
+        <canvas id="game-canvas"></canvas>
+        
+        <!-- 战斗 UI -->
+        <div id="battle-ui">
+            <div class="ui-top">
+                <div><div class="hp-bar"><div class="hp-fill" id="base-hp" style="width:100%"></div></div><div style="font-size:12px;color:#888;margin-top:5px">基地血量</div></div>
+                <div class="wave-info"><div class="wave-num" id="wave-num">1</div><div class="wave-label">WAVE</div></div>
+                <div class="score-info"><div class="score-num" id="score">0</div><div style="font-size:12px;color:#888">KILLS</div></div>
+            </div>
+            <button class="btn-pause" id="btn-pause">⏸</button>
+        </div>
+
+        <!-- 暂停菜单 -->
+        <div id="pause-menu">
+            <div class="pause-content">
+                <div class="pause-title">已暂停</div>
+                <button class="pause-btn" onclick="Battle.resume()">继续战斗</button>
+                <button class="pause-btn" onclick="Battle.restart()">重新开始</button>
+                <button class="pause-btn" onclick="Battle.quit()">返回主菜单</button>
+            </div>
+        </div>
+
+        <!-- 游戏结束 -->
+        <div id="gameover-menu">
+            <div class="gameover-content">
+                <div class="gameover-title">GAME OVER</div>
+                <div class="gameover-stats"><div>波次：<span id="final-wave" style="color:var(--neon-blue)">0</span></div><div>击杀：<span id="final-score" style="color:var(--neon-orange)">0</span></div></div>
+                <button class="pause-btn" onclick="Battle.restart()">再次挑战</button>
+                <button class="pause-btn" onclick="Battle.quit()">返回主菜单</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // 场景管理器
+        var Scene = {
+            currentScene: 'loading',
+            history: [],
+            switchTo: function(id) {
+                var screens = document.querySelectorAll('.screen');
+                for (var i = 0; i < screens.length; i++) screens[i].classList.remove('active');
+                if (this.currentScene !== id) this.history.push(this.currentScene);
+                var target = document.getElementById(id);
+                if (target) { target.classList.add('active'); this.currentScene = id; }
+            },
+            back: function() { if (this.history.length > 0) this.switchTo(this.history.pop()); }
+        };
+
+        // 游戏数据
+        var GameData = {
+            data: null,
+            init: function() {
+                try { var saved = localStorage.getItem('dawn_save'); this.data = saved ? JSON.parse(atob(saved)).data : this.createDefault(); }
+                catch(e) { this.data = this.createDefault(); }
+                return this.data;
+            },
+            createDefault: function() { return { level: 1, exp: 0, resources: { gold: 1000, diamond: 100, skillToken: 10 } }; },
+            updateUI: function() {
+                document.getElementById('player-level').textContent = this.data.level;
+                document.getElementById('player-gold').textContent = this.data.resources.gold.toLocaleString();
+                document.getElementById('player-diamond').textContent = this.data.resources.diamond.toLocaleString();
+            }
+        };
+
+        // 战斗系统
+        var Battle = {
+            canvas: null, ctx: null, running: false, paused: false,
+            player: null, bullets: [], enemies: [], particles: [],
+            wave: 1, score: 0, baseHP: 100, maxBaseHP: 100,
+            enemySpawnTimer: 0, enemySpawnInterval: 60,
+            
+            init: function() {
+                this.canvas = document.getElementById('game-canvas');
+                this.ctx = this.canvas.getContext('2d');
+                this.resize();
+                window.addEventListener('resize', this.resize.bind(this));
+                this.player = { x: this.canvas.width/2, y: this.canvas.height-100, angle: -Math.PI/2, shootTimer: 0, shootInterval: 15, color: '#00f3ff' };
+                this.setupControls();
+            },
+            
+            resize: function() {
+                this.canvas.width = window.innerWidth;
+                this.canvas.height = window.innerHeight;
+                if (this.player) { this.player.x = this.canvas.width/2; this.player.y = this.canvas.height-100; }
+            },
+            
+            setupControls: function() {
+                var self = this;
+                this.canvas.addEventListener('mousemove', function(e) {
+                    if (!self.running || self.paused) return;
+                    self.player.angle = Math.atan2(e.clientY - self.player.y, e.clientX - self.player.x);
+                });
+                this.canvas.addEventListener('touchmove', function(e) {
+                    if (!self.running || self.paused) return;
+                    e.preventDefault();
+                    var t = e.touches[0];
+                    self.player.angle = Math.atan2(t.clientY - self.player.y, t.clientX - self.player.x);
+                }, {passive: false});
+                this.canvas.addEventListener('click', function() { if (self.running && !self.paused) self.shoot(); });
+            },
+            
+            shoot: function() {
+                if (this.player.shootTimer > 0) return;
+                this.bullets.push({ x: this.player.x, y: this.player.y, vx: Math.cos(this.player.angle)*15, vy: Math.sin(this.player.angle)*15, radius: 5, color: '#00ff88' });
+                this.player.shootTimer = this.player.shootInterval;
+            },
+            
+            spawnEnemy: function() {
+                var size = 30 + Math.random()*20;
+                this.enemies.push({ x: Math.random()*(this.canvas.width-size*2)+size, y: -size, width: size, height: size, speed: 1+Math.random()*2+this.wave*0.3, hp: 1+Math.floor(this.wave/3), maxHp: 1+Math.floor(this.wave/3), color: '#ff4444' });
+            },
+            
+            spawnParticles: function(x, y, color, count) {
+                for (var i = 0; i < count; i++) {
+                    var a = Math.random()*Math.PI*2, s = Math.random()*5+2;
+                    this.particles.push({ x: x, y: y, vx: Math.cos(a)*s, vy: Math.sin(a)*s, life: 30, color: color, size: Math.random()*4+2 });
+                }
+            },
+            
+            update: function() {
+                if (!this.running || this.paused) return;
+                var self = this;
+                if (this.player.shootTimer > 0) this.player.shootTimer--;
+                if (this.player.shootTimer === 0 && Math.random() < 0.05) this.shoot();
+                this.enemySpawnTimer++;
+                if (this.enemySpawnTimer >= this.enemySpawnInterval) { this.spawnEnemy(); this.enemySpawnTimer = 0; }
+                
+                for (var i = this.bullets.length-1; i >= 0; i--) {
+                    var b = this.bullets[i]; b.x += b.vx; b.y += b.vy;
+                    if (b.x < 0 || b.x > this.canvas.width || b.y < 0 || b.y > this.canvas.height) this.bullets.splice(i, 1);
+                }
+                
+                for (var i = this.enemies.length-1; i >= 0; i--) {
+                    var e = this.enemies[i]; e.y += e.speed;
+                    if (e.y > this.canvas.height) {
+                        this.enemies.splice(i, 1); this.baseHP -= 10; this.updateUI();
+                        if (this.baseHP <= 0) { this.gameOver(); }
+                        continue;
+                    }
+                    for (var j = this.bullets.length-1; j >= 0; j--) {
+                        var b = this.bullets[j];
+                        var dx = b.x - e.x, dy = b.y - e.y, dist = Math.sqrt(dx*dx + dy*dy);
+                        if (dist < e.width/2 + b.radius) {
+                            this.bullets.splice(j, 1); e.hp--; this.spawnParticles(e.x, e.y, e.color, 3);
+                            if (e.hp <= 0) {
+                                this.enemies.splice(i, 1); this.score++; this.spawnParticles(e.x, e.y, '#ff6b35', 8); this.updateUI();
+                                if (this.score % 10 === 0) { this.wave++; this.enemySpawnInterval = Math.max(20, 60-this.wave*5); this.updateUI(); }
+                            }
+                            break;
+                        }
+                    }
+                }
+                
+                for (var i = this.particles.length-1; i >= 0; i--) {
+                    var p = this.particles[i]; p.x += p.vx; p.y += p.vy; p.life--; p.vx *= 0.95; p.vy *= 0.95;
+                    if (p.life <= 0) this.particles.splice(i, 1);
+                }
+            },
+            
+            render: function() {
+                this.ctx.fillStyle = 'rgba(10,10,15,0.3)'; this.ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
+                if (!this.running) return;
+                
+                this.ctx.save(); this.ctx.translate(this.player.x, this.player.y); this.ctx.rotate(this.player.angle);
+                this.ctx.fillStyle = this.player.color; this.ctx.beginPath(); this.ctx.moveTo(20,0); this.ctx.lineTo(-15,-15); this.ctx.lineTo(-15,15); this.ctx.closePath(); this.ctx.fill(); this.ctx.restore();
+                
+                for (var i = 0; i < this.bullets.length; i++) { var b = this.bullets[i]; this.ctx.fillStyle = b.color; this.ctx.beginPath(); this.ctx.arc(b.x, b.y, b.radius, 0, Math.PI*2); this.ctx.fill(); }
+                for (var i = 0; i < this.enemies.length; i++) { var e = this.enemies[i]; this.ctx.fillStyle = e.color; this.ctx.fillRect(e.x-e.width/2, e.y-e.height/2, e.width, e.height); var hp = e.hp/e.maxHp; this.ctx.fillStyle = 'rgba(0,0,0,0.5)'; this.ctx.fillRect(e.x-15, e.y-e.height/2-8, 30, 4); this.ctx.fillStyle = hp > 0.5 ? '#00ff88' : '#ff4444'; this.ctx.fillRect(e.x-15, e.y-e.height/2-8, 30*hp, 4); }
+                for (var i = 0; i < this.particles.length; i++) { var p = this.particles[i]; this.ctx.globalAlpha = p.life/30; this.ctx.fillStyle = p.color; this.ctx.beginPath(); this.ctx.arc(p.x, p.y, p.size, 0, Math.PI*2); this.ctx.fill(); }
+                this.ctx.globalAlpha = 1;
+            },
+            
+            gameLoop: function() { this.update(); this.render(); requestAnimationFrame(this.gameLoop.bind(this)); },
+            
+            start: function() {
+                this.running = true; this.paused = false; this.wave = 1; this.score = 0; this.baseHP = this.maxBaseHP;
+                this.bullets = []; this.enemies = []; this.particles = []; this.enemySpawnInterval = 60;
+                document.getElementById('main-menu').classList.remove('active');
+                document.getElementById('game-canvas').classList.add('active');
+                document.getElementById('battle-ui').classList.add('active');
+                document.getElementById('pause-menu').style.display = 'none';
+                document.getElementById('gameover-menu').style.display = 'none';
+                this.updateUI();
+            },
+            
+            pause: function() { this.paused = true; document.getElementById('pause-menu').style.display = 'flex'; },
+            resume: function() { this.paused = false; document.getElementById('pause-menu').style.display = 'none'; },
+            
+            gameOver: function() {
+                this.running = false;
+                document.getElementById('final-wave').textContent = this.wave;
+                document.getElementById('final-score').textContent = this.score;
+                document.getElementById('gameover-menu').style.display = 'flex';
+                document.getElementById('battle-ui').classList.remove('active');
+            },
+            
+            updateUI: function() {
+                document.getElementById('base-hp').style.width = (this.baseHP/this.maxBaseHP*100) + '%';
+                document.getElementById('wave-num').textContent = this.wave;
+                document.getElementById('score').textContent = this.score;
+            },
+            
+            restart: function() { document.getElementById('pause-menu').style.display = 'none'; document.getElementById('gameover-menu').style.display = 'none'; this.start(); },
+            quit: function() { this.running = false; this.canvas.classList.remove('active'); document.getElementById('battle-ui').classList.remove('active'); document.getElementById('pause-menu').style.display = 'none'; document.getElementById('gameover-menu').style.display = 'none'; Scene.switchTo('main-menu'); }
+        };
+
+        // 主程序
+        var Game = {
+            init: function() {
+                var self = this;
+                document.getElementById('loading-progress').style.width = '20%';
+                document.getElementById('loading-text').textContent = '加载玩家数据...';
+                GameData.init();
+                setTimeout(function() { document.getElementById('loading-progress').style.width = '50%'; document.getElementById('loading-text').textContent = '初始化战斗系统...'; Battle.init(); }, 300);
+                setTimeout(function() { document.getElementById('loading-progress').style.width = '80%'; document.getElementById('loading-text').textContent = '加载完成'; }, 600);
+                setTimeout(function() {
+                    document.getElementById('loading-progress').style.width = '100%';
+                    document.getElementById('loading-text').textContent = '启动游戏...';
+                    setTimeout(function() { Scene.switchTo('main-menu'); GameData.updateUI(); self.bindEvents(); Battle.gameLoop(); }, 300);
+                }, 900);
+            },
+            bindEvents: function() {
+                document.getElementById('btn-start').onclick = function() { Battle.start(); };
+                document.getElementById('btn-upgrade').onclick = function() { Scene.switchTo('upgrade-screen'); };
+                document.getElementById('btn-shop').onclick = function() { Scene.switchTo('shop-screen'); };
+                document.getElementById('btn-settings').onclick = function() { Scene.switchTo('settings-screen'); };
+                document.getElementById('btn-pause').onclick = function() { Battle.pause(); };
+            }
+        };
+
+        window.onload = function() { Game.init(); };
+    </script>
+</body>
+</html>

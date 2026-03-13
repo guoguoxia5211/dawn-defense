@@ -1,0 +1,10 @@
+{
+  "prompt": "Cyberpunk sci-fi game button icon set, futuristic UI buttons, neon blue and purple glow, holographic style, transparent background, game interface elements, high tech design, digital art",
+  "negative_prompt": "text, watermark, low quality",
+  "width": 512,
+  "height": 512,
+  "steps": 25,
+  "cfg_scale": 7,
+  "seed": 123,
+  "usage": "button-icons"
+}
