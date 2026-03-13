@@ -38,7 +38,9 @@ class Main {
             console.log('[Main] 游戏初始化完成');
         } catch (error) {
             console.error('[Main] 初始化失败:', error);
-            this.showError('初始化失败，请刷新页面重试');
+            // 即使出错也显示主界面
+            this.switchScene('main-menu');
+            this.showError('部分功能加载失败，但游戏仍可运行');
         }
     }
 

@@ -54,6 +54,12 @@ class SaveManager {
      */
     load() {
         try {
+            // 检查 localStorage 是否可用
+            if (typeof localStorage === 'undefined') {
+                console.warn('[SaveManager] localStorage 不可用');
+                return null;
+            }
+            
             const encrypted = localStorage.getItem(this.storageKey);
             
             if (!encrypted) {
@@ -77,16 +83,16 @@ class SaveManager {
             console.error('[SaveManager] 存档加载失败:', error);
             
             // 尝试从备份恢复
-            const backup = localStorage.getItem(this.backupKey);
-            if (backup) {
-                console.log('[SaveManager] 尝试从备份恢复...');
-                try {
+            try {
+                const backup = localStorage.getItem(this.backupKey);
+                if (backup) {
+                    console.log('[SaveManager] 尝试从备份恢复...');
                     const jsonString = decodeURIComponent(escape(atob(backup)));
                     const saveData = JSON.parse(jsonString);
                     return saveData.data;
-                } catch (backupError) {
-                    console.error('[SaveManager] 备份恢复失败:', backupError);
                 }
+            } catch (backupError) {
+                console.error('[SaveManager] 备份恢复失败:', backupError);
             }
             
             return null;
