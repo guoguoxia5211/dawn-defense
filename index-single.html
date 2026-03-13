@@ -1,0 +1,326 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>末日防线：代号曙光 v1.0.3</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: 'Segoe UI', 'Microsoft YaHei', sans-serif;
+            background: linear-gradient(135deg, #0a0a0f 0%, #1a1a2e 100%);
+            color: white;
+            overflow: hidden;
+            width: 100vw;
+            height: 100vh;
+        }
+        #game-container {
+            position: relative;
+            width: 100%;
+            height: 100%;
+        }
+        #loading-screen {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            background: radial-gradient(ellipse at center, #1a1a2e 0%, #0a0a0f 100%);
+            z-index: 1000;
+        }
+        .loading-content { text-align: center; padding: 40px; }
+        .game-title {
+            font-size: 48px;
+            font-weight: bold;
+            background: linear-gradient(135deg, #00f3ff, #bc13fe);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            margin-bottom: 40px;
+        }
+        .loading-bar {
+            width: 300px;
+            height: 8px;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 4px;
+            overflow: hidden;
+            margin: 20px auto;
+            border: 1px solid rgba(0, 243, 255, 0.3);
+        }
+        .loading-progress {
+            width: 0%;
+            height: 100%;
+            background: linear-gradient(90deg, #00f3ff, #bc13fe);
+            transition: width 0.3s ease;
+            box-shadow: 0 0 10px #00f3ff;
+        }
+        .loading-text { color: #a0a0a0; font-size: 16px; margin-top: 15px; }
+        #main-menu {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            display: none;
+        }
+        #main-menu.active { display: flex; }
+        .menu-bg {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: radial-gradient(circle at 20% 80%, rgba(188, 19, 254, 0.15) 0%, transparent 50%),
+                        radial-gradient(circle at 80% 20%, rgba(0, 243, 255, 0.15) 0%, transparent 50%);
+        }
+        .menu-content {
+            position: relative;
+            z-index: 10;
+            width: 100%;
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+        }
+        .game-title-glow {
+            font-size: 52px;
+            font-weight: bold;
+            background: linear-gradient(135deg, #00f3ff, #bc13fe);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            margin-bottom: 10px;
+        }
+        .subtitle {
+            font-size: 18px;
+            color: #00f3ff;
+            letter-spacing: 8px;
+            margin-bottom: 40px;
+            text-transform: uppercase;
+        }
+        .player-info {
+            background: rgba(20, 30, 40, 0.85);
+            border: 1px solid rgba(0, 243, 255, 0.3);
+            border-radius: 12px;
+            padding: 20px 30px;
+            margin-bottom: 30px;
+            backdrop-filter: blur(10px);
+            min-width: 280px;
+        }
+        .info-row {
+            display: flex;
+            justify-content: space-between;
+            padding: 8px 0;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        .info-row:last-child { border-bottom: none; }
+        .info-row .label { color: #a0a0a0; font-size: 14px; }
+        .info-row .value { color: white; font-weight: bold; font-size: 16px; }
+        .info-row .value.currency { color: #ff6b35; }
+        .menu-buttons {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+            width: 100%;
+            max-width: 320px;
+        }
+        .btn {
+            padding: 18px 40px;
+            font-size: 20px;
+            font-weight: bold;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            position: relative;
+            overflow: hidden;
+        }
+        .btn-primary {
+            background: linear-gradient(135deg, #00f3ff, #bc13fe);
+            color: white;
+            box-shadow: 0 0 20px rgba(0, 243, 255, 0.4);
+        }
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 0 30px rgba(0, 243, 255, 0.6);
+        }
+        .btn-secondary {
+            background: rgba(20, 30, 40, 0.85);
+            color: white;
+            border: 1px solid rgba(0, 243, 255, 0.3);
+            backdrop-filter: blur(10px);
+        }
+        .btn-secondary:hover {
+            background: rgba(0, 243, 255, 0.15);
+            border-color: #00f3ff;
+            transform: translateY(-2px);
+        }
+        .version {
+            position: absolute;
+            bottom: 20px;
+            right: 20px;
+            color: #a0a0a0;
+            font-size: 12px;
+            opacity: 0.6;
+        }
+        @media (max-width: 768px) {
+            .game-title-glow { font-size: 36px; }
+            .subtitle { font-size: 14px; letter-spacing: 4px; }
+            .btn { padding: 15px 30px; font-size: 18px; }
+        }
+    </style>
+</head>
+<body>
+    <div id="game-container">
+        <div id="loading-screen">
+            <div class="loading-content">
+                <h1 class="game-title">末日防线：代号曙光</h1>
+                <div class="loading-bar">
+                    <div class="loading-progress" id="loading-progress"></div>
+                </div>
+                <p class="loading-text" id="loading-text">初始化中...</p>
+            </div>
+        </div>
+        
+        <div id="main-menu">
+            <div class="menu-bg"></div>
+            <div class="menu-content">
+                <h1 class="game-title-glow">末日防线：代号曙光</h1>
+                <p class="subtitle">PROJECT: DAWN</p>
+                
+                <div class="player-info">
+                    <div class="info-row">
+                        <span class="label">指挥官等级:</span>
+                        <span class="value" id="player-level">1</span>
+                    </div>
+                    <div class="info-row">
+                        <span class="label">信用点:</span>
+                        <span class="value currency" id="player-gold">1000</span>
+                    </div>
+                    <div class="info-row">
+                        <span class="label">晶体:</span>
+                        <span class="value currency" id="player-diamond">100</span>
+                    </div>
+                </div>
+
+                <div class="menu-buttons">
+                    <button class="btn btn-primary" id="btn-start">开始行动</button>
+                    <button class="btn btn-secondary" id="btn-upgrade">强化系统</button>
+                    <button class="btn btn-secondary" id="btn-shop">补给站</button>
+                    <button class="btn btn-secondary" id="btn-settings">系统设置</button>
+                </div>
+
+                <div id="version" class="version">v1.0.3</div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // 存档管理器
+        const SaveManager = {
+            storageKey: 'dawn_defense_save',
+            version: '1.0.3',
+            
+            save: function(data) {
+                try {
+                    const saveData = { version: this.version, timestamp: Date.now(), data: data };
+                    const encrypted = btoa(unescape(encodeURIComponent(JSON.stringify(saveData))));
+                    localStorage.setItem(this.storageKey, encrypted);
+                    return true;
+                } catch (e) { return false; }
+            },
+            
+            load: function() {
+                try {
+                    const encrypted = localStorage.getItem(this.storageKey);
+                    if (!encrypted) return null;
+                    const jsonString = decodeURIComponent(escape(atob(encrypted)));
+                    return JSON.parse(jsonString).data;
+                } catch (e) { return null; }
+            }
+        };
+
+        // 游戏数据
+        const GameData = {
+            data: null,
+            
+            createDefault: function() {
+                return {
+                    level: 1, exp: 0, maxExp: 100,
+                    resources: { gold: 1000, diamond: 100, skillToken: 10 },
+                    progress: { maxLevelUnlocked: 1, currentLevel: 1 },
+                    settings: { musicVolume: 0.7, sfxVolume: 1.0 }
+                };
+            },
+            
+            init: function() {
+                const saved = SaveManager.load();
+                this.data = saved || this.createDefault();
+                if (!saved) SaveManager.save(this.data);
+                return this.data;
+            },
+            
+            updateUI: function() {
+                document.getElementById('player-level').textContent = this.data.level;
+                document.getElementById('player-gold').textContent = this.data.resources.gold.toLocaleString();
+                document.getElementById('player-diamond').textContent = this.data.resources.diamond.toLocaleString();
+            }
+        };
+
+        // 主程序
+        const Game = {
+            init: async function() {
+                console.log('🎮 游戏初始化开始');
+                
+                try {
+                    // 加载进度动画
+                    await this.updateProgress(20, '加载玩家数据...');
+                    GameData.init();
+                    await this.updateProgress(50, '资源准备中...');
+                    await this.updateProgress(80, '初始化完成');
+                    await this.updateProgress(100, '启动游戏...');
+                    
+                    // 切换到主界面
+                    setTimeout(() => {
+                        document.getElementById('loading-screen').style.display = 'none';
+                        document.getElementById('main-menu').classList.add('active');
+                        GameData.updateUI();
+                        console.log('✅ 游戏启动完成');
+                    }, 500);
+                    
+                } catch (error) {
+                    console.error('❌ 初始化失败:', error);
+                    // 强制显示主界面
+                    document.getElementById('loading-screen').style.display = 'none';
+                    document.getElementById('main-menu').classList.add('active');
+                    GameData.updateUI();
+                }
+            },
+            
+            updateProgress: function(percent, text) {
+                return new Promise(resolve => {
+                    document.getElementById('loading-progress').style.width = percent + '%';
+                    document.getElementById('loading-text').textContent = text;
+                    setTimeout(resolve, 200);
+                });
+            }
+        };
+
+        // 绑定按钮事件
+        window.addEventListener('DOMContentLoaded', () => {
+            document.getElementById('btn-start').onclick = () => alert('🎮 战斗系统开发中！\n当前版本：v1.0.3\n章节一已完成');
+            document.getElementById('btn-upgrade').onclick = () => alert('💎 强化系统开发中！\n章节七实装');
+            document.getElementById('btn-shop').onclick = () => alert('🛒 补给站开发中！\n章节十实装');
+            document.getElementById('btn-settings').onclick = () => alert('⚙️ 设置开发中！\n章节十二实装');
+            
+            // 启动游戏
+            Game.init();
+        });
+    </script>
+</body>
+</html>
