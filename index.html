@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="mobile-web-app-capable" content="yes">
+    <title>末日防线：代号曙光 v1.0.0</title>
+    <link rel="stylesheet" href="styles/main.css">
+</head>
+<body>
+    <!-- 游戏容器 -->
+    <div id="game-container">
+        <!-- 加载界面 -->
+        <div id="loading-screen">
+            <div class="loading-content">
+                <h1 class="game-title">末日防线：代号曙光</h1>
+                <div class="loading-bar">
+                    <div class="loading-progress" id="loading-progress"></div>
+                </div>
+                <p class="loading-text" id="loading-text">初始化中...</p>
+            </div>
+        </div>
+
+        <!-- 主界面 -->
+        <div id="main-menu" class="screen hidden">
+            <div class="menu-bg"></div>
+            <div class="menu-content">
+                <h1 class="game-title-glow">末日防线：代号曙光</h1>
+                <p class="subtitle">PROJECT: DAWN</p>
+                
+                <div class="player-info">
+                    <div class="info-row">
+                        <span class="label">指挥官等级:</span>
+                        <span class="value" id="player-level">1</span>
+                    </div>
+                    <div class="info-row">
+                        <span class="label">信用点:</span>
+                        <span class="value currency" id="player-gold">0</span>
+                    </div>
+                    <div class="info-row">
+                        <span class="label">晶体:</span>
+                        <span class="value currency" id="player-diamond">0</span>
+                    </div>
+                </div>
+
+                <div class="menu-buttons">
+                    <button class="btn btn-primary" id="btn-start">开始行动</button>
+                    <button class="btn btn-secondary" id="btn-upgrade">强化系统</button>
+                    <button class="btn btn-secondary" id="btn-shop">补给站</button>
+                    <button class="btn btn-secondary" id="btn-settings">系统设置</button>
+                </div>
+
+                <div id="version" class="version">v1.0.0</div>
+            </div>
+        </div>
+
+        <!-- 游戏画布 -->
+        <canvas id="game-canvas" class="hidden"></canvas>
+    </div>
+
+    <!-- 核心脚本 -->
+    <script src="scripts/save-manager.js"></script>
+    <script src="scripts/game-data.js"></script>
+    <script src="scripts/main.js"></script>
+</body>
+</html>
