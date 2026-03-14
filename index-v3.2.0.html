@@ -702,7 +702,7 @@ var Battle = {
         var waveText = document.getElementById('complete-wave');
         var waveScoreText = document.getElementById('wave-score');
         
-        waveText.textContent = '第 ' + Math.ceil(this.enemiesKilledInWave/10) + ' 波';
+        waveText.textContent = '第 ' + this.wave + ' 波完成！';
         waveScoreText.textContent = this.waveScore;
         
         // 计算星级
@@ -735,7 +735,7 @@ var Battle = {
     
     updateUI: function() {
         document.getElementById('base-hp').style.width = (this.baseHP/this.maxBaseHP*100) + '%';
-        document.getElementById('wave-num').textContent = Math.ceil(this.enemiesKilledInWave/10);
+        document.getElementById('wave-num').textContent = this.wave;  // ✅ 显示当前波次
         document.getElementById('score').textContent = this.score;
     },
     
@@ -846,10 +846,14 @@ var Game = {
         // 🆕 通关 UI 按钮
         document.getElementById('btn-next-wave').onclick = function() {
             document.getElementById('level-complete-modal').classList.remove('active');
+            Battle.wave++;  // ⬆️ 波次递增
             Battle.enemiesKilledInWave = 0;
             Battle.waveScore = 0;
             Battle.baseHPAtWaveStart = Battle.baseHP;
+            Battle.enemySpawnInterval = Math.max(30, 80 - Battle.wave * 5);  // ⬆️ 难度递增
+            Battle.updateUI();
             Battle.paused = false;
+            console.log('🌊 进入第', Battle.wave, '波');
         };
         document.getElementById('btn-quit-wave').onclick = function() { Battle.quit(); };
     }
