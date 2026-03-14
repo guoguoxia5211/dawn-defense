@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>向僵尸开炮 v3.2.0 - 自动锁定 + 波次通关</title>
+    <title>向僵尸开炮 v3.2.0 FINAL - 完美版</title>
     <style>
         :root { --neon-blue: #00f3ff; --neon-purple: #bc13fe; --neon-orange: #ff6b35; --neon-red: #ff4444; --neon-green: #00ff88; --glass-bg: rgba(20,30,40,0.85); --text-secondary: #a0a0a0; }
         * { margin: 0; padding: 0; box-sizing: border-box; user-select: none; }
@@ -114,7 +114,7 @@
                     <button class="btn btn-secondary" id="btn-shop">商店</button>
                     <button class="btn btn-secondary" id="btn-settings">设置</button>
                 </div>
-                <div class="version">v3.2.0</div>
+                <div class="version">v3.2.0 FINAL</div>
             </div>
         </div>
 
@@ -232,18 +232,21 @@
         </div>
     </div>
 
-    <script src="scripts/rogue-system-v2.js"></script>
     <script>
 /**
- * 肉鸽系统 v2 - 自动锁定 + 自动射击 + 波次通关 + 星级评价
- * 版本：v3.2.0
+ * 向僵尸开炮 v3.2.0 FINAL
+ * ✅ 百分百自动锁定
+ * ✅ 难度降低 70%
+ * ✅ 每 10 波通关 UI
+ * ✅ 星级评价系统
+ * ❌ 无红色探测线
  */
 
-var RogueSystem = {
+var Battle = {
     canvas: null, ctx: null, running: false, paused: false,
     player: null, bullets: [], enemies: [], particles: [],
     wave: 1, score: 0, baseHP: 100, maxBaseHP: 100,
-    enemySpawnTimer: 0, enemySpawnInterval: 60,
+    enemySpawnTimer: 0, enemySpawnInterval: 80,  // ⬇️ 生成速度降低
     
     playerLevel: 1, playerExp: 0, expToNextLevel: 100,
     skillPool: [], selectedSkills: [],
@@ -284,17 +287,32 @@ var RogueSystem = {
         this.ctx = this.canvas.getContext('2d');
         this.resize();
         window.addEventListener('resize', this.resize.bind(this));
-        this.player = { x: this.canvas.width/2, y: this.canvas.height-100, angle: -Math.PI/2, shootTimer: 0, shootInterval: 15, color: '#00f3ff', damage: 1, fireRate: 1, pierce: 0, bulletSize: 1 };
+        this.player = { 
+            x: this.canvas.width/2, 
+            y: this.canvas.height-100, 
+            angle: -Math.PI/2, 
+            shootTimer: 0, 
+            shootInterval: 12,  // ⬇️ 射速加快
+            color: '#00f3ff', 
+            damage: 2,  // ⬆️ 基础伤害翻倍
+            fireRate: 1.5,  // ⬆️ 射速提升
+            pierce: 0, 
+            bulletSize: 1 
+        };
         this.skillPool = JSON.parse(JSON.stringify(this.skills));
-        console.log('⚔️ 肉鸽系统 v3.2.0 初始化完成 - 自动锁定 + 波次通关 + 星级评价');
+        console.log('⚔️ 向僵尸开炮 v3.2.0 FINAL 初始化完成');
     },
     
     resize: function() {
         this.canvas.width = window.innerWidth;
         this.canvas.height = window.innerHeight;
-        if (this.player) { this.player.x = this.canvas.width/2; this.player.y = this.canvas.height-100; }
+        if (this.player) { 
+            this.player.x = this.canvas.width/2; 
+            this.player.y = this.canvas.height-100; 
+        }
     },
     
+    // 🎯 查找最近敌人
     findNearestEnemy: function() {
         if (this.enemies.length === 0) return null;
         var nearest = null;
@@ -312,6 +330,7 @@ var RogueSystem = {
         return nearest;
     },
     
+    // 🎯 自动锁定（无红线版本）
     autoAim: function() {
         var target = this.findNearestEnemy();
         if (target) {
@@ -319,13 +338,18 @@ var RogueSystem = {
             var dx = target.x - this.player.x;
             var dy = target.y - this.player.y;
             var targetAngle = Math.atan2(dy, dx);
+            
+            // 直接锁定，不显示红线
             var angleDiff = targetAngle - this.player.angle;
             while (angleDiff > Math.PI) angleDiff -= Math.PI * 2;
             while (angleDiff < -Math.PI) angleDiff += Math.PI * 2;
-            this.player.angle += angleDiff * 0.3;
+            
+            // 快速转向
+            this.player.angle += angleDiff * 0.5;
         }
     },
     
+    // 🔫 自动射击
     autoShoot: function() {
         if (this.player.shootTimer > 0) return;
         if (this.lockedEnemy) {
@@ -335,17 +359,22 @@ var RogueSystem = {
     
     shoot: function() {
         if (this.player.shootTimer > 0) return;
-        var speed = 15;
+        var speed = 18;  // ⬆️ 子弹速度提升
         this.bullets.push({ 
-            x: this.player.x, y: this.player.y, 
-            vx: Math.cos(this.player.angle)*speed, vy: Math.sin(this.player.angle)*speed, 
-            radius: 5 * this.player.bulletSize, color: '#00ff88',
-            damage: this.player.damage, pierce: this.player.pierce, hitCount: 0
+            x: this.player.x, 
+            y: this.player.y, 
+            vx: Math.cos(this.player.angle)*speed, 
+            vy: Math.sin(this.player.angle)*speed, 
+            radius: 6 * this.player.bulletSize,  // ⬆️ 子弹变大
+            color: '#00ff88',
+            damage: this.player.damage, 
+            pierce: this.player.pierce, 
+            hitCount: 0
         });
         this.player.shootTimer = Math.floor(this.player.shootInterval / this.player.fireRate);
     },
     
-    // 🆕 v3.2.0 - 降低难度：血量 -50%, 速度 -30%
+    // 👾 生成敌人（难度降低 70%）
     spawnEnemy: function() {
         var size = 30 + Math.random()*20;
         this.enemies.push({ 
@@ -353,9 +382,9 @@ var RogueSystem = {
             y: -size, 
             width: size, 
             height: size, 
-            speed: (1+Math.random()*2+this.wave*0.1) * 0.7,  // ⬇️ 速度降低 30%
-            hp: (1+Math.floor(this.wave/3)) * 0.5,  // ⬇️ 血量降低 50%
-            maxHp: (1+Math.floor(this.wave/3)) * 0.5, 
+            speed: (1+Math.random()*1.5+this.wave*0.05) * 0.5,  // ⬇️ 速度降低 50%
+            hp: (1+Math.floor(this.wave/5)) * 0.3,  // ⬇️ 血量降低 70%
+            maxHp: (1+Math.floor(this.wave/5)) * 0.3, 
             color: '#ff4444' 
         });
     },
@@ -363,7 +392,14 @@ var RogueSystem = {
     spawnParticles: function(x, y, color, count) {
         for (var i = 0; i < count; i++) {
             var a = Math.random()*Math.PI*2, s = Math.random()*5+2;
-            this.particles.push({ x: x, y: y, vx: Math.cos(a)*s, vy: Math.sin(a)*s, life: 30, color: color, size: Math.random()*4+2 });
+            this.particles.push({ 
+                x: x, y: y, 
+                vx: Math.cos(a)*s, 
+                vy: Math.sin(a)*s, 
+                life: 30, 
+                color: color, 
+                size: Math.random()*4+2 
+            });
         }
     },
     
@@ -419,7 +455,7 @@ var RogueSystem = {
         var modal = document.getElementById('levelup-modal');
         var levelText = document.getElementById('levelup-level');
         var cardsContainer = document.getElementById('skill-cards');
-        levelText.textContent = '升级到'+ this.playerLevel;
+        levelText.textContent = '升级到 '+ this.playerLevel;
         cardsContainer.innerHTML = '';
         
         var options = this.getRandomSkills(3);
@@ -458,53 +494,75 @@ var RogueSystem = {
     update: function() {
         if (!this.running || this.paused) return;
         
+        // 🎯 自动锁定
         this.autoAim();
         
+        // 🔫 自动射击
         this.autoShootTimer++;
-        if (this.autoShootTimer >= 5) {
+        if (this.autoShootTimer >= 3) {  // ⬆️ 射击频率提升
             this.autoShoot();
             this.autoShootTimer = 0;
         }
         
         if (this.player.shootTimer > 0) this.player.shootTimer--;
         
+        // 👾 生成敌人
         this.enemySpawnTimer++;
-        if (this.enemySpawnTimer >= this.enemySpawnInterval) { this.spawnEnemy(); this.enemySpawnTimer = 0; }
-        
-        for (var i = this.bullets.length-1; i >= 0; i--) {
-            var b = this.bullets[i]; b.x += b.vx; b.y += b.vy;
-            if (b.x < 0 || b.x > this.canvas.width || b.y < 0 || b.y > this.canvas.height) this.bullets.splice(i, 1);
+        if (this.enemySpawnTimer >= this.enemySpawnInterval) { 
+            this.spawnEnemy(); 
+            this.enemySpawnTimer = 0; 
         }
         
+        // 🔫 更新子弹
+        for (var i = this.bullets.length-1; i >= 0; i--) {
+            var b = this.bullets[i]; 
+            b.x += b.vx; 
+            b.y += b.vy;
+            if (b.x < 0 || b.x > this.canvas.width || b.y < 0 || b.y > this.canvas.height) {
+                this.bullets.splice(i, 1);
+            }
+        }
+        
+        // 👾 更新敌人
         for (var i = this.enemies.length-1; i >= 0; i--) {
-            var e = this.enemies[i]; e.y += e.speed;
+            var e = this.enemies[i]; 
+            e.y += e.speed;
+            
+            // 敌人到达底部
             if (e.y > this.canvas.height) {
-                this.enemies.splice(i, 1); this.baseHP -= 10; this.updateUI();
-                if (this.baseHP <= 0) { this.gameOver(); }
+                this.enemies.splice(i, 1); 
+                this.baseHP -= 5;  // ⬇️ 伤害降低
+                this.updateUI();
+                if (this.baseHP <= 0) { 
+                    this.gameOver(); 
+                }
                 continue;
             }
+            
+            // 子弹击中敌人
             for (var j = this.bullets.length-1; j >= 0; j--) {
                 var b = this.bullets[j];
                 var dx = b.x - e.x, dy = b.y - e.y, dist = Math.sqrt(dx*dx + dy*dy);
                 if (dist < e.width/2 + b.radius) {
-                    this.bullets.splice(j, 1); e.hp -= b.damage; this.spawnParticles(e.x, e.y, e.color, 3);
+                    this.bullets.splice(j, 1); 
+                    e.hp -= b.damage; 
+                    this.spawnParticles(e.x, e.y, e.color, 3);
+                    
                     if (e.hp <= 0) {
-                        this.enemies.splice(i, 1); this.score++; this.addExp(10);
-                        this.spawnParticles(e.x, e.y, '#ff6b35', 8); this.updateUI();
+                        this.enemies.splice(i, 1); 
+                        this.score++; 
+                        this.addExp(10);
+                        this.spawnParticles(e.x, e.y, '#ff6b35', 8); 
+                        this.updateUI();
                         
-                        // 🆕 v3.2.0 - 波次系统
+                        // 🆕 波次系统
                         this.enemiesKilledInWave++;
                         this.waveScore += 10;
                         
-                        if (this.score % 10 === 0) { 
-                            this.wave++; 
-                            this.enemySpawnInterval = Math.max(20, 60-this.wave*5); 
-                            this.updateUI();
-                            
-                            // 🆕 每 10 波显示通关 UI
-                            if (this.enemiesKilledInWave >= this.ENEMIES_PER_WAVE) {
-                                this.showLevelComplete();
-                            }
+                        // 🆕 每 10 波显示通关 UI
+                        if (this.enemiesKilledInWave >= this.ENEMIES_PER_WAVE) {
+                            this.showLevelComplete();
+                            return;  // 暂停游戏
                         }
                     }
                     break;
@@ -512,36 +570,96 @@ var RogueSystem = {
             }
         }
         
+        // ✨ 更新粒子
         for (var i = this.particles.length-1; i >= 0; i--) {
-            var p = this.particles[i]; p.x += p.vx; p.y += p.vy; p.life--; p.vx *= 0.95; p.vy *= 0.95;
+            var p = this.particles[i]; 
+            p.x += p.vx; 
+            p.y += p.vy; 
+            p.life--; 
+            p.vx *= 0.95; 
+            p.vy *= 0.95;
             if (p.life <= 0) this.particles.splice(i, 1);
         }
     },
     
     render: function() {
-        this.ctx.fillStyle = 'rgba(10,10,15,0.3)'; this.ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
+        // 清屏
+        this.ctx.fillStyle = 'rgba(10,10,15,0.3)'; 
+        this.ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
+        
         if (!this.running) return;
         
-        this.ctx.save(); this.ctx.translate(this.player.x, this.player.y); this.ctx.rotate(this.player.angle);
-        this.ctx.fillStyle = this.player.color; this.ctx.beginPath(); this.ctx.moveTo(20,0); this.ctx.lineTo(-15,-15); this.ctx.lineTo(-15,15); this.ctx.closePath(); this.ctx.fill();
-        // ❌ v3.2.0 - 去掉红色探测线
+        // 🎮 渲染玩家（无红线）
+        this.ctx.save(); 
+        this.ctx.translate(this.player.x, this.player.y); 
+        this.ctx.rotate(this.player.angle);
+        this.ctx.fillStyle = this.player.color; 
+        this.ctx.beginPath(); 
+        this.ctx.moveTo(20,0); 
+        this.ctx.lineTo(-15,-15); 
+        this.ctx.lineTo(-15,15); 
+        this.ctx.closePath(); 
+        this.ctx.fill();
+        // ❌ 绝对不画红线
         this.ctx.restore();
         
-        for (var i = 0; i < this.bullets.length; i++) { var b = this.bullets[i]; this.ctx.fillStyle = b.color; this.ctx.beginPath(); this.ctx.arc(b.x, b.y, b.radius, 0, Math.PI*2); this.ctx.fill(); }
-        for (var i = 0; i < this.enemies.length; i++) { var e = this.enemies[i]; this.ctx.fillStyle = e.color; this.ctx.fillRect(e.x-e.width/2, e.y-e.height/2, e.width, e.height); var hp = e.hp/e.maxHp; this.ctx.fillStyle = 'rgba(0,0,0,0.5)'; this.ctx.fillRect(e.x-15, e.y-e.height/2-8, 30, 4); this.ctx.fillStyle = hp > 0.5 ? '#00ff88' : '#ff4444'; this.ctx.fillRect(e.x-15, e.y-e.height/2-8, 30*hp, 4); }
-        for (var i = 0; i < this.particles.length; i++) { var p = this.particles[i]; this.ctx.globalAlpha = p.life/30; this.ctx.fillStyle = p.color; this.ctx.beginPath(); this.ctx.arc(p.x, p.y, p.size, 0, Math.PI*2); this.ctx.fill(); }
+        // 🔫 渲染子弹
+        for (var i = 0; i < this.bullets.length; i++) { 
+            var b = this.bullets[i]; 
+            this.ctx.fillStyle = b.color; 
+            this.ctx.beginPath(); 
+            this.ctx.arc(b.x, b.y, b.radius, 0, Math.PI*2); 
+            this.ctx.fill(); 
+        }
+        
+        // 👾 渲染敌人
+        for (var i = 0; i < this.enemies.length; i++) { 
+            var e = this.enemies[i]; 
+            this.ctx.fillStyle = e.color; 
+            this.ctx.fillRect(e.x-e.width/2, e.y-e.height/2, e.width, e.height); 
+            
+            // 血条
+            var hp = e.hp/e.maxHp; 
+            this.ctx.fillStyle = 'rgba(0,0,0,0.5)'; 
+            this.ctx.fillRect(e.x-15, e.y-e.height/2-8, 30, 4); 
+            this.ctx.fillStyle = hp > 0.5 ? '#00ff88' : '#ff4444'; 
+            this.ctx.fillRect(e.x-15, e.y-e.height/2-8, 30*hp, 4); 
+        }
+        
+        // ✨ 渲染粒子
+        for (var i = 0; i < this.particles.length; i++) { 
+            var p = this.particles[i]; 
+            this.ctx.globalAlpha = p.life/30; 
+            this.ctx.fillStyle = p.color; 
+            this.ctx.beginPath(); 
+            this.ctx.arc(p.x, p.y, p.size, 0, Math.PI*2); 
+            this.ctx.fill(); 
+        }
         this.ctx.globalAlpha = 1;
     },
     
-    gameLoop: function() { this.update(); this.render(); requestAnimationFrame(this.gameLoop.bind(this)); },
+    gameLoop: function() { 
+        this.update(); 
+        this.render(); 
+        requestAnimationFrame(this.gameLoop.bind(this)); 
+    },
     
     startBattle: function() {
-        this.running = true; this.paused = false; this.wave = 1; this.score = 0; this.baseHP = this.maxBaseHP;
-        this.playerLevel = 1; this.playerExp = 0; this.expToNextLevel = 100;
-        this.bullets = []; this.enemies = []; this.particles = []; this.enemySpawnInterval = 60;
+        this.running = true; 
+        this.paused = false; 
+        this.wave = 1; 
+        this.score = 0; 
+        this.baseHP = this.maxBaseHP;
+        this.playerLevel = 1; 
+        this.playerExp = 0; 
+        this.expToNextLevel = 100;
+        this.bullets = []; 
+        this.enemies = []; 
+        this.particles = []; 
+        this.enemySpawnInterval = 80;  // ⬇️ 生成速度慢
         this.selectedSkills = [];
         
-        // 🆕 v3.2.0 - 波次系统初始化
+        // 🆕 波次系统初始化
         this.enemiesKilledInWave = 0;
         this.waveScore = 0;
         this.baseHPAtWaveStart = this.baseHP;
@@ -557,8 +675,15 @@ var RogueSystem = {
         console.log('🎮 开始游戏 - 自动锁定 + 自动射击');
     },
     
-    pause: function() { this.paused = true; document.getElementById('pause-menu').style.display = 'flex'; },
-    resume: function() { this.paused = false; document.getElementById('pause-menu').style.display = 'none'; },
+    pause: function() { 
+        this.paused = true; 
+        document.getElementById('pause-menu').style.display = 'flex'; 
+    },
+    
+    resume: function() { 
+        this.paused = false; 
+        document.getElementById('pause-menu').style.display = 'none'; 
+    },
     
     gameOver: function() {
         this.running = false;
@@ -569,7 +694,7 @@ var RogueSystem = {
         document.getElementById('battle-ui').classList.remove('active');
     },
     
-    // 🆕 v3.2.0 - 显示通关 UI
+    // 🆕 显示通关 UI
     showLevelComplete: function() {
         this.paused = true;
         
@@ -577,7 +702,7 @@ var RogueSystem = {
         var waveText = document.getElementById('complete-wave');
         var waveScoreText = document.getElementById('wave-score');
         
-        waveText.textContent = '第 ' + this.wave + ' 波';
+        waveText.textContent = '第 ' + Math.ceil(this.enemiesKilledInWave/10) + ' 波';
         waveScoreText.textContent = this.waveScore;
         
         // 计算星级
@@ -610,7 +735,7 @@ var RogueSystem = {
     
     updateUI: function() {
         document.getElementById('base-hp').style.width = (this.baseHP/this.maxBaseHP*100) + '%';
-        document.getElementById('wave-num').textContent = this.wave;
+        document.getElementById('wave-num').textContent = Math.ceil(this.enemiesKilledInWave/10);
         document.getElementById('score').textContent = this.score;
     },
     
@@ -620,74 +745,117 @@ var RogueSystem = {
         document.getElementById('exp-text').textContent = 'LV.'+ this.playerLevel +' '+ Math.floor(this.playerExp) +'/'+ this.expToNextLevel;
     },
     
-    restart: function() { document.getElementById('pause-menu').style.display = 'none'; document.getElementById('gameover-menu').style.display = 'none'; this.startBattle(); },
-    quit: function() { this.running = false; this.canvas.classList.remove('active'); this.battleUI.classList.remove('active'); document.getElementById('pause-menu').style.display = 'none'; document.getElementById('gameover-menu').style.display = 'none'; document.getElementById('levelup-modal').classList.remove('active'); document.getElementById('level-complete-modal').classList.remove('active'); document.getElementById('start-select-modal').classList.remove('active'); Scene.switchTo('main-menu'); }
+    restart: function() { 
+        document.getElementById('pause-menu').style.display = 'none'; 
+        document.getElementById('gameover-menu').style.display = 'none'; 
+        this.startBattle(); 
+    },
+    
+    quit: function() { 
+        this.running = false; 
+        this.canvas.classList.remove('active'); 
+        document.getElementById('battle-ui').classList.remove('active'); 
+        document.getElementById('pause-menu').style.display = 'none'; 
+        document.getElementById('gameover-menu').style.display = 'none'; 
+        document.getElementById('levelup-modal').classList.remove('active'); 
+        document.getElementById('level-complete-modal').classList.remove('active'); 
+        document.getElementById('start-select-modal').classList.remove('active'); 
+        Scene.switchTo('main-menu'); 
+    }
 };
-</script>
-        <script>
-        var Scene = {
-            currentScene: 'loading', history: [],
-            switchTo: function(id) {
-                var screens = document.querySelectorAll('.screen');
-                for (var i = 0; i < screens.length; i++) screens[i].classList.remove('active');
-                if (this.currentScene !== id) this.history.push(this.currentScene);
-                var target = document.getElementById(id);
-                if (target) { target.classList.add('active'); this.currentScene = id; }
-            },
-            back: function() { if (this.history.length > 0) this.switchTo(this.history.pop()); }
+
+// 场景管理
+var Scene = {
+    currentScene: 'loading', 
+    history: [],
+    switchTo: function(id) {
+        var screens = document.querySelectorAll('.screen');
+        for (var i = 0; i < screens.length; i++) screens[i].classList.remove('active');
+        if (this.currentScene !== id) this.history.push(this.currentScene);
+        var target = document.getElementById(id);
+        if (target) { 
+            target.classList.add('active'); 
+            this.currentScene = id; 
+        }
+    },
+    back: function() { 
+        if (this.history.length > 0) this.switchTo(this.history.pop()); 
+    }
+};
+
+// 游戏数据
+var GameData = {
+    data: null,
+    init: function() {
+        try { 
+            var saved = localStorage.getItem('dawn_save'); 
+            this.data = saved ? JSON.parse(atob(saved)).data : this.createDefault(); 
+        } catch(e) { 
+            this.data = this.createDefault(); 
+        }
+        return this.data;
+    },
+    createDefault: function() { 
+        return { 
+            level: 1, 
+            exp: 0, 
+            resources: { gold: 1000, diamond: 100, skillToken: 10 } 
+        }; 
+    },
+    updateUI: function() {
+        document.getElementById('player-level').textContent = this.data.level;
+        document.getElementById('player-gold').textContent = this.data.resources.gold.toLocaleString();
+        document.getElementById('player-diamond').textContent = this.data.resources.diamond.toLocaleString();
+    }
+};
+
+// 游戏主逻辑
+var Game = {
+    init: function() {
+        var self = this;
+        document.getElementById('loading-progress').style.width = '20%';
+        document.getElementById('loading-text').textContent = '加载玩家数据...';
+        GameData.init();
+        setTimeout(function() { 
+            document.getElementById('loading-progress').style.width = '50%'; 
+            document.getElementById('loading-text').textContent = '初始化战斗系统...'; 
+            Battle.init(); 
+        }, 300);
+        setTimeout(function() { 
+            document.getElementById('loading-progress').style.width = '80%'; 
+            document.getElementById('loading-text').textContent = '加载完成'; 
+        }, 600);
+        setTimeout(function() {
+            document.getElementById('loading-progress').style.width = '100%';
+            document.getElementById('loading-text').textContent = '启动游戏...';
+            setTimeout(function() { 
+                Scene.switchTo('main-menu'); 
+                GameData.updateUI(); 
+                self.bindEvents(); 
+                Battle.gameLoop(); 
+            }, 300);
+        }, 900);
+    },
+    bindEvents: function() {
+        document.getElementById('btn-start').onclick = function() { Battle.showStartSelect(); };
+        document.getElementById('btn-upgrade').onclick = function() { Scene.switchTo('upgrade-screen'); };
+        document.getElementById('btn-shop').onclick = function() { Scene.switchTo('shop-screen'); };
+        document.getElementById('btn-settings').onclick = function() { Scene.switchTo('settings-screen'); };
+        document.getElementById('btn-pause').onclick = function() { Battle.pause(); };
+        
+        // 🆕 通关 UI 按钮
+        document.getElementById('btn-next-wave').onclick = function() {
+            document.getElementById('level-complete-modal').classList.remove('active');
+            Battle.enemiesKilledInWave = 0;
+            Battle.waveScore = 0;
+            Battle.baseHPAtWaveStart = Battle.baseHP;
+            Battle.paused = false;
         };
+        document.getElementById('btn-quit-wave').onclick = function() { Battle.quit(); };
+    }
+};
 
-        var GameData = {
-            data: null,
-            init: function() {
-                try { var saved = localStorage.getItem('dawn_save'); this.data = saved ? JSON.parse(atob(saved)).data : this.createDefault(); }
-                catch(e) { this.data = this.createDefault(); }
-                return this.data;
-            },
-            createDefault: function() { return { level: 1, exp: 0, resources: { gold: 1000, diamond: 100, skillToken: 10 } }; },
-            updateUI: function() {
-                document.getElementById('player-level').textContent = this.data.level;
-                document.getElementById('player-gold').textContent = this.data.resources.gold.toLocaleString();
-                document.getElementById('player-diamond').textContent = this.data.resources.diamond.toLocaleString();
-            }
-        };
-
-        var Battle = null;
-
-        var Game = {
-            init: function() {
-                var self = this;
-                document.getElementById('loading-progress').style.width = '20%';
-                document.getElementById('loading-text').textContent = '加载玩家数据...';
-                GameData.init();
-                setTimeout(function() { document.getElementById('loading-progress').style.width = '50%'; document.getElementById('loading-text').textContent = '初始化战斗系统...'; RogueSystem.init(); Battle = RogueSystem; }, 300);
-                setTimeout(function() { document.getElementById('loading-progress').style.width = '80%'; document.getElementById('loading-text').textContent = '加载完成'; }, 600);
-                setTimeout(function() {
-                    document.getElementById('loading-progress').style.width = '100%';
-                    document.getElementById('loading-text').textContent = '启动游戏...';
-                    setTimeout(function() { Scene.switchTo('main-menu'); GameData.updateUI(); self.bindEvents(); Battle.gameLoop(); }, 300);
-                }, 900);
-            },
-            bindEvents: function() {
-                document.getElementById('btn-start').onclick = function() { Battle.showStartSelect(); };
-                document.getElementById('btn-upgrade').onclick = function() { Scene.switchTo('upgrade-screen'); };
-                document.getElementById('btn-shop').onclick = function() { Scene.switchTo('shop-screen'); };
-                document.getElementById('btn-settings').onclick = function() { Scene.switchTo('settings-screen'); };
-                document.getElementById('btn-pause').onclick = function() { Battle.pause(); };
-                
-                // 🆕 v3.2.0 - 通关 UI 按钮
-                document.getElementById('btn-next-wave').onclick = function() {
-                    document.getElementById('level-complete-modal').classList.remove('active');
-                    Battle.enemiesKilledInWave = 0;
-                    Battle.waveScore = 0;
-                    Battle.baseHPAtWaveStart = Battle.baseHP;
-                    Battle.paused = false;
-                };
-                document.getElementById('btn-quit-wave').onclick = function() { Battle.quit(); };
-            }
-        };
-
-        window.onload = function() { Game.init(); };
+window.onload = function() { Game.init(); };
     </script>
 </body>
 </html>
