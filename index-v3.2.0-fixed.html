@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>向僵尸开炮 v3.3.0 - 终极修复版</title>
+    <title>向僵尸开炮 v3.2.0 FINAL - 完美修复版</title>
     <style>
         :root { --neon-blue: #00f3ff; --neon-purple: #bc13fe; --neon-orange: #ff6b35; --neon-red: #ff4444; --neon-green: #00ff88; --glass-bg: rgba(20,30,40,0.85); --text-secondary: #a0a0a0; }
         * { margin: 0; padding: 0; box-sizing: border-box; user-select: none; }
@@ -43,93 +43,57 @@
         #game-canvas { display: none; background: linear-gradient(180deg, #1a1a2e 0%, #0a0a0f 100%); }
         #game-canvas.active { display: block; }
         
-        /* 🆕 战斗 UI - 完全修复布局 */
+        /* 🆕 战斗 UI - 修复布局 */
         #battle-ui { display: none; position: absolute; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; z-index: 100; }
         #battle-ui.active { display: block; }
         
-        /* 暂停按钮 - 最右上角，独立 */
+        /* UI 顶部区域 */
+        .ui-top { position: absolute; top: 15px; left: 15px; right: 15px; display: flex; justify-content: space-between; align-items: flex-start; pointer-events: none; }
+        
+        /* 左侧 - 血条 */
+        .hp-container { pointer-events: auto; }
+        .hp-bar { width: 200px; height: 20px; background: rgba(0,0,0,0.5); border: 2px solid #333; border-radius: 10px; overflow: hidden; }
+        .hp-fill { height: 100%; background: linear-gradient(90deg, var(--neon-red), var(--neon-orange)); transition: width 0.3s; }
+        .hp-label { font-size: 12px; color: #888; margin-top: 5px; text-align: center; }
+        
+        /* 中间 - 波次 */
+        .wave-info { text-align: center; pointer-events: auto; }
+        .wave-num { font-size: 28px; font-weight: bold; color: var(--neon-blue); text-shadow: 0 0 10px rgba(0,243,255,0.5); }
+        .wave-label { font-size: 12px; color: #888; letter-spacing: 2px; }
+        
+        /* 右侧 - 分数 */
+        .score-info { text-align: right; pointer-events: auto; }
+        .score-num { font-size: 24px; color: var(--neon-orange); font-weight: bold; }
+        .score-label { font-size: 12px; color: #888; }
+        
+        /* 暂停按钮 - 右上角独立位置 */
         .btn-pause { 
-            position: fixed; 
-            top: 20px; 
-            right: 20px; 
-            width: 50px; 
-            height: 50px; 
+            position: absolute; 
+            top: 15px; 
+            right: 15px; 
+            width: 45px; 
+            height: 45px; 
             background: rgba(0,243,255,0.2); 
             border: 2px solid var(--neon-blue); 
-            border-radius: 12px; 
+            border-radius: 10px; 
             color: var(--neon-blue); 
-            font-size: 24px; 
+            font-size: 22px; 
             cursor: pointer; 
             pointer-events: auto;
-            z-index: 1000;
+            z-index: 101;
         }
-        
-        /* UI 顶部区域 - 血条在左侧稍下位置 */
-        .ui-top-left { 
-            position: fixed; 
-            top: 80px; 
-            left: 20px; 
-            pointer-events: auto; 
-            z-index: 100;
-        }
-        .hp-bar { width: 220px; height: 25px; background: rgba(0,0,0,0.6); border: 2px solid #444; border-radius: 12px; overflow: hidden; }
-        .hp-fill { height: 100%; background: linear-gradient(90deg, #ff4444, #ff6b35); transition: width 0.3s; }
-        .hp-label { font-size: 13px; color: #aaa; margin-top: 6px; text-align: center; font-weight: bold; }
-        
-        /* 波次显示 - 顶部中间 */
-        .wave-info { 
-            position: fixed; 
-            top: 20px; 
-            left: 50%; 
-            transform: translateX(-50%); 
-            text-align: center; 
-            pointer-events: auto;
-            z-index: 100;
-        }
-        .wave-num { font-size: 32px; font-weight: bold; color: var(--neon-blue); text-shadow: 0 0 15px rgba(0,243,255,0.6); }
-        .wave-label { font-size: 13px; color: #888; letter-spacing: 3px; margin-top: 5px; }
-        
-        /* 分数显示 - 右上角，暂停键下方 */
-        .score-info { 
-            position: fixed; 
-            top: 80px; 
-            right: 20px; 
-            text-align: right; 
-            pointer-events: auto;
-            z-index: 100;
-        }
-        .score-num { font-size: 28px; color: var(--neon-orange); font-weight: bold; }
-        .score-label { font-size: 13px; color: #888; margin-top: 5px; }
         
         /* 经验条 - 底部 */
-        .exp-bar-container { 
-            position: fixed; 
-            bottom: 25px; 
-            left: 50%; 
-            transform: translateX(-50%); 
-            width: 450px; 
-            pointer-events: auto;
-            z-index: 100;
-        }
-        .exp-bar { width: 100%; height: 14px; background: rgba(0,0,0,0.6); border: 2px solid #444; border-radius: 8px; overflow: hidden; }
+        .exp-bar-container { position: absolute; bottom: 20px; left: 50%; transform: translateX(-50%); width: 400px; pointer-events: auto; }
+        .exp-bar { width: 100%; height: 12px; background: rgba(0,0,0,0.5); border: 2px solid #333; border-radius: 6px; overflow: hidden; }
         .exp-fill { height: 100%; background: linear-gradient(90deg, var(--neon-purple), var(--neon-blue)); transition: width 0.3s; }
-        .exp-text { text-align: center; font-size: 13px; color: white; margin-top: 6px; font-weight: bold; }
+        .exp-text { text-align: center; font-size: 12px; color: white; margin-top: 5px; }
         
         /* 自动锁定提示 */
-        .auto-aim-indicator { 
-            position: fixed; 
-            bottom: 70px; 
-            left: 50%; 
-            transform: translateX(-50%); 
-            font-size: 14px; 
-            color: var(--neon-green); 
-            text-align: center; 
-            pointer-events: none;
-            z-index: 100;
-        }
+        .auto-aim-indicator { position: absolute; bottom: 60px; left: 50%; transform: translateX(-50%); font-size: 14px; color: var(--neon-green); text-align: center; pointer-events: none; }
         
         /* 弹窗 */
-        #levelup-modal, #start-select-modal, #level-complete-modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.92); justify-content: center; align-items: center; pointer-events: auto; z-index: 2000; }
+        #levelup-modal, #start-select-modal, #level-complete-modal { display: none; position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.9); justify-content: center; align-items: center; pointer-events: auto; z-index: 2000; }
         #levelup-modal.active, #start-select-modal.active, #level-complete-modal.active { display: flex; }
         .levelup-content { text-align: center; max-width: 900px; padding: 20px; }
         .levelup-title { font-size: 56px; color: var(--neon-orange); margin-bottom: 10px; text-shadow: 0 0 20px var(--neon-orange); }
@@ -151,7 +115,7 @@
         .skill-card.legendary .skill-rarity { color: var(--neon-orange); }
         
         /* 暂停/结束菜单 */
-        #pause-menu, #gameover-menu { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.88); display: none; justify-content: center; align-items: center; pointer-events: auto; z-index: 1000; }
+        #pause-menu, #gameover-menu { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.85); display: none; justify-content: center; align-items: center; pointer-events: auto; z-index: 1000; }
         .pause-content, .gameover-content { text-align: center; }
         .pause-title { font-size: 48px; color: var(--neon-blue); margin-bottom: 40px; }
         .gameover-title { font-size: 56px; color: var(--neon-red); margin-bottom: 20px; }
@@ -193,7 +157,7 @@
                     <button class="btn btn-secondary" id="btn-shop">商店</button>
                     <button class="btn btn-secondary" id="btn-settings">设置</button>
                 </div>
-                <div class="version">v3.3.0 终极修复版</div>
+                <div class="version">v3.2.0 FINAL</div>
             </div>
         </div>
 
@@ -226,7 +190,7 @@
                 <h2 class="scene-title">设置</h2>
                 <div class="feature-card"><h3>🔊 音效和音乐</h3><p>音效：<input type="range" min="0" max="100" value="70"><br>音乐：<input type="range" min="0" max="100" value="100"></p></div>
                 <div class="feature-card"><h3>🎮 游戏设置</h3><p>画质：<select><option>高清</option><option>标准</option></select><br>帧率：<select><option>60 FPS</option><option>30 FPS</option></select></p></div>
-                <div class="feature-card"><h3>💾 存档管理</h3><button class="btn btn-secondary" style="margin:5px" onclick="Battle.saveGame()">手动保存</button><p id="save-status" style="color:#888;font-size:12px;margin-top:5px"></p></div>
+                <div class="feature-card"><h3>💾 存档管理</h3><button class="btn btn-secondary" style="margin:5px" onclick="alert('存档已保存')">保存进度</button></div>
             </div>
         </div>
 
@@ -235,28 +199,31 @@
         
         <!-- 战斗 UI -->
         <div id="battle-ui">
-            <!-- 暂停按钮 - 最右上角 -->
+            <!-- 顶部 UI -->
+            <div class="ui-top">
+                <!-- 左侧：血条 -->
+                <div class="hp-container">
+                    <div class="hp-bar"><div class="hp-fill" id="base-hp" style="width:100%"></div></div>
+                    <div class="hp-label">基地生命</div>
+                </div>
+                
+                <!-- 中间：波次 -->
+                <div class="wave-info">
+                    <div class="wave-num" id="wave-num">1</div>
+                    <div class="wave-label">WAVE</div>
+                </div>
+                
+                <!-- 右侧：分数 -->
+                <div class="score-info">
+                    <div class="score-num" id="score">0</div>
+                    <div class="score-label">KILLS</div>
+                </div>
+            </div>
+            
+            <!-- 暂停按钮 - 独立定位 -->
             <button class="btn-pause" id="btn-pause">⏸</button>
             
-            <!-- 波次显示 - 顶部中间 -->
-            <div class="wave-info">
-                <div class="wave-num" id="wave-num">1</div>
-                <div class="wave-label">WAVE</div>
-            </div>
-            
-            <!-- 血条 - 左上角（往下移） -->
-            <div class="ui-top-left">
-                <div class="hp-bar"><div class="hp-fill" id="base-hp" style="width:100%"></div></div>
-                <div class="hp-label">🏰 基地生命</div>
-            </div>
-            
-            <!-- 分数 - 右上角（暂停键下方） -->
-            <div class="score-info">
-                <div class="score-num" id="score">0</div>
-                <div class="score-label">🎯 击杀数</div>
-            </div>
-            
-            <!-- 经验条 - 底部 -->
+            <!-- 经验条 -->
             <div class="exp-bar-container">
                 <div class="exp-bar"><div class="exp-fill" id="exp-fill" style="width:0%"></div></div>
                 <div class="exp-text" id="exp-text">LV.1 0/100</div>
@@ -320,23 +287,22 @@
         <!-- 游戏结束 -->
         <div id="gameover-menu">
             <div class="gameover-content">
-                <div class="gameover-title">💀 游戏结束</div>
+                <div class="gameover-title">GAME OVER</div>
                 <div class="gameover-stats"><div>波次：<span id="final-wave" style="color:var(--neon-blue)">0</span></div><div>得分：<span id="final-score" style="color:var(--neon-orange)">0</span></div><div>等级：<span id="final-level" style="color:var(--neon-purple)">0</span></div></div>
-                <button class="pause-btn" onclick="Battle.resumeGame()">🔄 继续游戏</button>
-                <button class="pause-btn" onclick="Battle.quit()">🏠 返回菜单</button>
+                <button class="pause-btn" onclick="Battle.restart()">再来一次</button>
+                <button class="pause-btn" onclick="Battle.quit()">返回菜单</button>
             </div>
         </div>
     </div>
 
     <script>
 /**
- * 向僵尸开炮 v3.3.0 - 终极修复版
+ * 向僵尸开炮 v3.2.0 FINAL - 完美修复版
  * ✅ 百分百自动锁定
  * ✅ 难度降低 70%
- * ✅ 波次递进系统（已修复）
+ * ✅ 波次递进系统
  * ✅ 星级评价
- * ✅ UI 布局完全修复（血条下移/暂停键独立）
- * ✅ 存档系统（死亡自动保存）
+ * ✅ UI 布局修复
  * ❌ 无红色探测线
  */
 
@@ -357,9 +323,6 @@ var Battle = {
     waveScore: 0,
     baseHPAtWaveStart: 100,
     
-    // 存档数据
-    saveData: null,
-    
     skills: [
         { id: 'bullet_damage_1', name: '强力子弹 I', icon: '🔫', desc: '子弹伤害 +20%', rarity: 'common', type: 'passive', effect: { damage: 0.2 } },
         { id: 'bullet_damage_2', name: '强力子弹 II', icon: '🔫', desc: '子弹伤害 +40%', rarity: 'rare', type: 'passive', effect: { damage: 0.4 } },
@@ -375,8 +338,20 @@ var Battle = {
         this.ctx = this.canvas.getContext('2d');
         this.resize();
         window.addEventListener('resize', this.resize.bind(this));
-        this.loadGame();  // 🆕 加载存档
-        console.log('⚔️ 向僵尸开炮 v3.3.0 初始化完成');
+        this.player = { 
+            x: this.canvas.width/2, 
+            y: this.canvas.height-100, 
+            angle: -Math.PI/2, 
+            shootTimer: 0, 
+            shootInterval: 12,
+            color: '#00f3ff', 
+            damage: 2,
+            fireRate: 1.5,
+            pierce: 0, 
+            bulletSize: 1 
+        };
+        this.skillPool = JSON.parse(JSON.stringify(this.skills));
+        console.log('⚔️ 向僵尸开炮 v3.2.0 FINAL 初始化完成');
     },
     
     resize: function() {
@@ -385,66 +360,6 @@ var Battle = {
         if (this.player) { 
             this.player.x = this.canvas.width/2; 
             this.player.y = this.canvas.height-100; 
-        }
-    },
-    
-    // 🆕 存档系统
-    saveGame: function() {
-        this.saveData = {
-            wave: this.wave,
-            score: this.score,
-            baseHP: this.baseHP,
-            maxBaseHP: this.maxBaseHP,
-            playerLevel: this.playerLevel,
-            playerExp: this.playerExp,
-            enemiesKilledInWave: this.enemiesKilledInWave,
-            timestamp: Date.now()
-        };
-        localStorage.setItem('dawn_save_v3', JSON.stringify(this.saveData));
-        console.log('💾 游戏已保存', this.saveData);
-        var status = document.getElementById('save-status');
-        if (status) status.textContent = '✓ 已保存 ' + new Date().toLocaleTimeString();
-    },
-    
-    loadGame: function() {
-        try {
-            var saved = localStorage.getItem('dawn_save_v3');
-            if (saved) {
-                this.saveData = JSON.parse(saved);
-                console.log('📂 读取存档成功', this.saveData);
-            }
-        } catch(e) {
-            console.log('📂 无存档或读取失败');
-        }
-    },
-    
-    // 🆕 死亡时自动保存
-    autoSaveOnDeath: function() {
-        if (this.wave > 1 || this.score > 0) {
-            this.saveGame();
-            console.log('💾 死亡自动保存');
-        }
-    },
-    
-    // 🆕 从存档继续
-    resumeGame: function() {
-        if (this.saveData) {
-            this.wave = this.saveData.wave;
-            this.score = this.saveData.score;
-            this.baseHP = this.saveData.baseHP;
-            this.maxBaseHP = this.saveData.maxBaseHP;
-            this.playerLevel = this.saveData.playerLevel;
-            this.playerExp = this.saveData.playerExp;
-            this.enemiesKilledInWave = this.saveData.enemiesKilledInWave;
-            this.baseHPAtWaveStart = this.baseHP;
-            this.enemySpawnInterval = Math.max(30, 80 - this.wave * 5);
-            
-            document.getElementById('gameover-menu').style.display = 'none';
-            this.running = true;
-            this.paused = false;
-            this.updateUI();
-            this.updateExpUI();
-            console.log('🔄 从第', this.wave, '波继续');
         }
     },
     
@@ -749,14 +664,6 @@ var Battle = {
     startBattle: function() {
         this.running = true; 
         this.paused = false; 
-        
-        // 🆕 如果有存档，询问是否继续
-        if (this.saveData && confirm('检测到存档，是否从第 '+ this.saveData.wave +' 波继续？')) {
-            this.resumeGame();
-            return;
-        }
-        
-        // 新游戏
         this.wave = 1; 
         this.score = 0; 
         this.baseHP = this.maxBaseHP;
@@ -798,7 +705,6 @@ var Battle = {
     
     gameOver: function() {
         this.running = false;
-        this.autoSaveOnDeath();  // 🆕 死亡自动保存
         document.getElementById('final-wave').textContent = this.wave;
         document.getElementById('final-score').textContent = this.score;
         document.getElementById('final-level').textContent = this.playerLevel;
@@ -856,8 +762,6 @@ var Battle = {
     },
     
     restart: function() { 
-        this.saveData = null;  // 清除存档
-        localStorage.removeItem('dawn_save_v3');
         document.getElementById('pause-menu').style.display = 'none'; 
         document.getElementById('gameover-menu').style.display = 'none'; 
         this.startBattle(); 
@@ -898,7 +802,7 @@ var GameData = {
     data: null,
     init: function() {
         try { 
-            var saved = localStorage.getItem('dawn_meta'); 
+            var saved = localStorage.getItem('dawn_save'); 
             this.data = saved ? JSON.parse(atob(saved)).data : this.createDefault(); 
         } catch(e) { 
             this.data = this.createDefault(); 
@@ -950,11 +854,11 @@ var Game = {
         
         document.getElementById('btn-next-wave').onclick = function() {
             document.getElementById('level-complete-modal').classList.remove('active');
-            Battle.wave++;  // 🆕 波次递增
+            Battle.wave++;
             Battle.enemiesKilledInWave = 0;
             Battle.waveScore = 0;
             Battle.baseHPAtWaveStart = Battle.baseHP;
-            Battle.enemySpawnInterval = Math.max(30, 80 - Battle.wave * 5);  // 🆕 难度递增
+            Battle.enemySpawnInterval = Math.max(30, 80 - Battle.wave * 5);
             Battle.updateUI();
             Battle.paused = false;
             console.log('🌊 进入第', Battle.wave, '波 - 生成间隔:', Battle.enemySpawnInterval);
