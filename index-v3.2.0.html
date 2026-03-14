@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>末日防线：代号曙光 v3.2.0</title>
+    <title>向僵尸开炮 v3.2.0 - 自动锁定 + 波次通关</title>
     <style>
         :root { --neon-blue: #00f3ff; --neon-purple: #bc13fe; --neon-orange: #ff6b35; --neon-red: #ff4444; --neon-green: #00ff88; --glass-bg: rgba(20,30,40,0.85); --text-secondary: #a0a0a0; }
         * { margin: 0; padding: 0; box-sizing: border-box; user-select: none; }
@@ -11,16 +11,12 @@
         #game-container { position: relative; width: 100%; height: 100%; }
         .screen { position: absolute; top: 0; left: 0; width: 100%; height: 100%; display: none; }
         .screen.active { display: flex; }
-        
-        /* 加载界面 */
         #loading-screen { justify-content: center; align-items: center; }
         .loading-content { text-align: center; padding: 40px; }
         .game-title { font-size: 48px; background: linear-gradient(135deg, var(--neon-blue), var(--neon-purple)); -webkit-background-clip: text; -webkit-text-fill-color: transparent; margin-bottom: 40px; }
         .loading-bar { width: 300px; height: 8px; background: rgba(255,255,255,0.1); border-radius: 4px; overflow: hidden; margin: 20px auto; border: 1px solid rgba(0,243,255,0.3); }
         .loading-progress { width: 0%; height: 100%; background: linear-gradient(90deg, var(--neon-blue), var(--neon-purple)); transition: width 0.3s; }
         .loading-text { color: var(--text-secondary); font-size: 16px; margin-top: 15px; }
-        
-        /* 主界面 */
         #main-menu { background: radial-gradient(circle at 20% 80%, rgba(188,19,254,0.15), transparent 50%), radial-gradient(circle at 80% 20%, rgba(0,243,255,0.15), transparent 50%); flex-direction: column; justify-content: center; align-items: center; }
         .menu-content { position: relative; z-index: 10; width: 100%; height: 100%; display: flex; flex-direction: column; justify-content: center; align-items: center; padding: 20px; }
         .game-title-glow { font-size: 52px; background: linear-gradient(135deg, var(--neon-blue), var(--neon-purple)); -webkit-background-clip: text; -webkit-text-fill-color: transparent; margin-bottom: 10px; }
@@ -38,20 +34,14 @@
         .btn-secondary { background: var(--glass-bg); color: white; border: 2px solid var(--neon-blue); }
         .btn-secondary:hover { background: rgba(0,243,255,0.15); border-color: var(--neon-blue); transform: translateY(-2px); }
         .version { position: absolute; bottom: 20px; right: 20px; color: var(--text-secondary); font-size: 12px; opacity: 0.6; }
-        
-        /* 其他场景 */
         .btn-back { position: absolute; top: 20px; left: 20px; z-index: 100; width: 50px; height: 50px; border-radius: 50%; background: rgba(0,243,255,0.2); border: 2px solid var(--neon-blue); color: var(--neon-blue); font-size: 24px; cursor: pointer; display: flex; align-items: center; justify-content: center; }
         .scene-title { font-size: 42px; background: linear-gradient(135deg, var(--neon-blue), var(--neon-purple)); -webkit-background-clip: text; -webkit-text-fill-color: transparent; margin-bottom: 40px; text-align: center; }
         .scene-content { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 80px 20px 20px; width: 100%; max-width: 600px; margin: 0 auto; }
         .feature-card { background: var(--glass-bg); border: 1px solid rgba(0,243,255,0.3); border-radius: 16px; padding: 30px; margin: 15px; width: 100%; text-align: center; }
         .feature-card h3 { color: var(--neon-blue); margin-bottom: 15px; font-size: 24px; }
         .feature-card p { color: var(--text-secondary); line-height: 1.6; }
-        
-        /* 战斗画布 */
         #game-canvas { display: none; background: linear-gradient(180deg, #1a1a2e 0%, #0a0a0f 100%); }
         #game-canvas.active { display: block; }
-        
-        /* 战斗 UI */
         #battle-ui { display: none; position: absolute; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; }
         #battle-ui.active { display: block; }
         .ui-top { position: absolute; top: 10px; left: 10px; right: 10px; display: flex; justify-content: space-between; align-items: flex-start; }
@@ -62,18 +52,13 @@
         .wave-label { font-size: 12px; color: #888; }
         .score-info { text-align: right; }
         .score-num { font-size: 20px; color: var(--neon-orange); }
-        
-        /* 经验条 */
         .exp-bar-container { position: absolute; bottom: 20px; left: 50%; transform: translateX(-50%); width: 400px; }
         .exp-bar { width: 100%; height: 12px; background: rgba(0,0,0,0.5); border: 2px solid #333; border-radius: 6px; overflow: hidden; }
         .exp-fill { height: 100%; background: linear-gradient(90deg, var(--neon-purple), var(--neon-blue)); transition: width 0.3s; }
         .exp-text { text-align: center; font-size: 12px; color: white; margin-top: 5px; }
-        
         .btn-pause { position: absolute; top: 10px; right: 10px; width: 40px; height: 40px; background: rgba(0,243,255,0.2); border: 2px solid var(--neon-blue); border-radius: 8px; color: var(--neon-blue); font-size: 20px; cursor: pointer; pointer-events: auto; }
-        
-        /* 升级/选择弹窗 */
-        #levelup-modal, #start-select-modal { display: none; position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.9); justify-content: center; align-items: center; pointer-events: auto; z-index: 2000; }
-        #levelup-modal.active, #start-select-modal.active { display: flex; }
+        #levelup-modal, #start-select-modal, #level-complete-modal { display: none; position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.9); justify-content: center; align-items: center; pointer-events: auto; z-index: 2000; }
+        #levelup-modal.active, #start-select-modal.active, #level-complete-modal.active { display: flex; }
         .levelup-content { text-align: center; max-width: 900px; }
         .levelup-title { font-size: 56px; color: var(--neon-orange); margin-bottom: 10px; text-shadow: 0 0 20px var(--neon-orange); }
         .levelup-subtitle { font-size: 24px; color: var(--neon-blue); margin-bottom: 40px; }
@@ -92,81 +77,74 @@
         .skill-card.rare .skill-rarity { color: #5e9eff; }
         .skill-card.epic .skill-rarity { color: var(--neon-purple); }
         .skill-card.legendary .skill-rarity { color: var(--neon-orange); }
-        
-        /* 暂停/结束菜单 */
         #pause-menu, #gameover-menu { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.85); display: none; justify-content: center; align-items: center; pointer-events: auto; z-index: 1000; }
         .pause-content, .gameover-content { text-align: center; }
         .pause-title { font-size: 48px; color: var(--neon-blue); margin-bottom: 40px; }
         .gameover-title { font-size: 56px; color: var(--neon-red); margin-bottom: 20px; }
-        .pause-btn { display: block; width: 200px; padding: 15px; margin: 10px auto; background: var(--glass-bg); border: 2px solid var(--neon-blue); border-radius: 8px; color: white; font-size: 18px; cursor: pointer; }
-        .pause-btn:hover { background: rgba(0,243,255,0.2); }
-        .gameover-stats { font-size: 24px; margin: 20px 0; color: #888; }
+        .hidden { display: none !important; }
         
-        /* 自动攻击提示 */
-        .auto-aim-indicator { position: absolute; bottom: 60px; left: 50%; transform: translateX(-50%); font-size: 14px; color: var(--neon-green); text-align: center; }
+        /* 通关 UI */
+        .star-rating { font-size: clamp(48px, 12vw, 72px); margin: 20px 0; letter-spacing: 10px; }
+        .star-rating .star { color: #333; text-shadow: none; }
+        .star-rating .star.filled { color: #f39c12; text-shadow: 0 0 20px rgba(243, 156, 18, 0.8); }
     </style>
 </head>
 <body>
     <div id="game-container">
-        <!-- 加载界面 -->
         <div id="loading-screen" class="screen active">
             <div class="loading-content">
-                <h1 class="game-title">末日防线：代号曙光</h1>
+                <h1 class="game-title">向僵尸开炮</h1>
                 <div class="loading-bar"><div class="loading-progress" id="loading-progress"></div></div>
-                <p class="loading-text" id="loading-text">初始化中...</p>
+                <p class="loading-text" id="loading-text">初始化...</p>
             </div>
         </div>
 
-        <!-- 主界面 -->
         <div id="main-menu" class="screen">
             <div class="menu-content">
-                <h1 class="game-title-glow">末日防线：代号曙光</h1>
+                <h1 class="game-title-glow">向僵尸开炮</h1>
                 <p class="subtitle">PROJECT: DAWN</p>
                 <div class="player-info">
-                    <div class="info-row"><span class="label">指挥官等级:</span><span class="value" id="player-level">1</span></div>
-                    <div class="info-row"><span class="label">信用点:</span><span class="value currency" id="player-gold">1000</span></div>
-                    <div class="info-row"><span class="label">晶体:</span><span class="value currency" id="player-diamond">100</span></div>
+                    <div class="info-row"><span class="label">等级</span><span class="value" id="player-level">1</span></div>
+                    <div class="info-row"><span class="label">金币</span><span class="value currency" id="player-gold">1000</span></div>
+                    <div class="info-row"><span class="label">钻石</span><span class="value currency" id="player-diamond">100</span></div>
                 </div>
                 <div class="menu-buttons">
-                    <button class="btn btn-primary" id="btn-start">开始战斗</button>
-                    <button class="btn btn-secondary" id="btn-upgrade">强化系统</button>
-                    <button class="btn btn-secondary" id="btn-shop">补给站</button>
-                    <button class="btn btn-secondary" id="btn-settings">系统设置</button>
+                    <button class="btn btn-primary" id="btn-start">开始游戏</button>
+                    <button class="btn btn-secondary" id="btn-upgrade">升级</button>
+                    <button class="btn btn-secondary" id="btn-shop">商店</button>
+                    <button class="btn btn-secondary" id="btn-settings">设置</button>
                 </div>
                 <div class="version">v3.2.0</div>
             </div>
         </div>
 
-        <!-- 强化系统 -->
         <div id="upgrade-screen" class="screen">
             <button class="btn-back" onclick="Scene.back()">←</button>
             <div class="scene-content">
-                <h2 class="scene-title">强化系统</h2>
-                <div class="feature-card"><h3>🔧 技能升级</h3><p>消耗技能点数提升技能等级<br>当前可用点数：<span style="color:var(--neon-orange)">10</span></p></div>
-                <div class="feature-card"><h3>💎 核心镶嵌</h3><p>为技能安装核心，改变技能机制<br>已解锁核心：0/5</p></div>
-                <div class="feature-card"><h3>⚡ 属性强化</h3><p>永久提升基础属性<br>当前加成：+0%</p></div>
+                <h2 class="scene-title">升级</h2>
+                <div class="feature-card"><h3>🔫 基础属性升级</h3><p>提升攻击力和防御力<br>当前等级：<span style="color:var(--neon-orange)">10</span></p></div>
+                <div class="feature-card"><h3>🛡️ 基地升级</h3><p>基地生命值和防御<br>当前等级：0/5</p></div>
+                <div class="feature-card"><h3>⚡ 技能升级</h3><p>技能效果和持续时间<br>当前等级：+0%</p></div>
             </div>
         </div>
 
-        <!-- 商店 -->
         <div id="shop-screen" class="screen">
             <button class="btn-back" onclick="Scene.back()">←</button>
             <div class="scene-content">
-                <h2 class="scene-title">补给站</h2>
-                <div class="feature-card"><h3>🛒 每日礼包</h3><p>每日限购一次<br>价格：50 晶体</p></div>
-                <div class="feature-card"><h3>🎁 成长基金</h3><p>达到指定等级领取奖励<br>已领取：0/10</p></div>
-                <div class="feature-card"><h3>💰 充值中心</h3><p>首充双倍，限时优惠<br>当前晶体：<span style="color:var(--neon-orange)">100</span></p></div>
+                <h2 class="scene-title">商店</h2>
+                <div class="feature-card"><h3>💎 购买金币</h3><p>100 钻石 = 1000 金币<br>当前：100 钻石</p></div>
+                <div class="feature-card"><h3>🎁 技能包</h3><p>随机获得一个技能<br>价格：10/个</p></div>
+                <div class="feature-card"><h3>🏆 永久升级</h3><p>永久增加属性<br>价格：<span style="color:var(--neon-orange)">100</span></p></div>
             </div>
         </div>
 
-        <!-- 设置 -->
         <div id="settings-screen" class="screen">
             <button class="btn-back" onclick="Scene.back()">←</button>
             <div class="scene-content">
-                <h2 class="scene-title">系统设置</h2>
-                <div class="feature-card"><h3>🔊 音效设置</h3><p>背景音乐：<input type="range" min="0" max="100" value="70"></p><p>音效音量：<input type="range" min="0" max="100" value="100"></p></div>
-                <div class="feature-card"><h3>📱 画面设置</h3><p>画质：<select><option>高清</option><option>标准</option></select></p><p>帧率：<select><option>60 FPS</option><option>30 FPS</option></select></p></div>
-                <div class="feature-card"><h3>💾 数据管理</h3><button class="btn btn-secondary" style="margin:5px" onclick="alert('进度已保存')">保存进度</button></div>
+                <h2 class="scene-title">设置</h2>
+                <div class="feature-card"><h3>🔊 音效和音乐</h3><p>音效：<input type="range" min="0" max="100" value="70"><br>音乐：<input type="range" min="0" max="100" value="100"></p></div>
+                <div class="feature-card"><h3>🎮 游戏设置</h3><p>画质：<select><option>高清</option><option>标准</option></select><br>帧率：<select><option>60 FPS</option><option>30 FPS</option></select></p></div>
+                <div class="feature-card"><h3>💾 存档管理</h3><button class="btn btn-secondary" style="margin:5px" onclick="alert('存档已保存')">保存进度</button></div>
             </div>
         </div>
 
@@ -176,7 +154,7 @@
         <!-- 战斗 UI -->
         <div id="battle-ui">
             <div class="ui-top">
-                <div><div class="hp-bar"><div class="hp-fill" id="base-hp" style="width:100%"></div></div><div style="font-size:12px;color:#888;margin-top:5px">基地血量</div></div>
+                <div><div class="hp-bar"><div class="hp-fill" id="base-hp" style="width:100%"></div></div><div style="font-size:12px;color:#888;margin-top:5px">基地生命</div></div>
                 <div class="wave-info"><div class="wave-num" id="wave-num">1</div><div class="wave-label">WAVE</div></div>
                 <div class="score-info"><div class="score-num" id="score">0</div><div style="font-size:12px;color:#888">KILLS</div></div>
             </div>
@@ -188,15 +166,15 @@
                 <div class="exp-text" id="exp-text">LV.1 0/100</div>
             </div>
             
-            <!-- 自动攻击提示 -->
+            <!-- 自动锁定提示 -->
             <div class="auto-aim-indicator">🎯 自动锁定 + 自动射击</div>
         </div>
 
         <!-- 开局选择弹窗 -->
         <div id="start-select-modal">
             <div class="levelup-content">
-                <div class="levelup-title">选择初始道具</div>
-                <div class="levelup-subtitle">选择一个开始战斗</div>
+                <div class="levelup-title">准备战斗</div>
+                <div class="levelup-subtitle">选择一个初始技能</div>
                 <div class="skill-cards" id="start-skill-cards"></div>
             </div>
         </div>
@@ -205,18 +183,41 @@
         <div id="levelup-modal">
             <div class="levelup-content">
                 <div class="levelup-title">LEVEL UP!</div>
-                <div class="levelup-subtitle" id="levelup-level">当前等级：2</div>
+                <div class="levelup-subtitle" id="levelup-level">升级到 2</div>
                 <div class="skill-cards" id="skill-cards"></div>
+            </div>
+        </div>
+        
+        <!-- 🆕 通关 UI -->
+        <div id="level-complete-modal">
+            <div class="levelup-content">
+                <div class="levelup-title">🎉 波次完成！🎉</div>
+                <div class="levelup-subtitle" id="complete-wave">第 10 波</div>
+                
+                <div class="star-rating" id="star-rating">
+                    <span class="star">★</span>
+                    <span class="star">★</span>
+                    <span class="star">★</span>
+                </div>
+                
+                <p style="color:#ecf0f1;font-size:15px;margin:10px 0">通关评价</p>
+                <p id="star-comment" style="color:#f39c12;font-size:14px;margin:10px 0">完美！</p>
+                
+                <p style="color:#ecf0f1;font-size:15px;margin:10px 0">本波得分</p>
+                <div id="wave-score" style="font-size:36px;color:#f39c12;margin:10px 0">0</div>
+                
+                <button class="btn btn-primary" id="btn-next-wave" style="margin-top:20px">🌊 下一波</button>
+                <button class="btn btn-secondary" id="btn-quit-wave" style="margin-top:10px">🏠 返回菜单</button>
             </div>
         </div>
 
         <!-- 暂停菜单 -->
         <div id="pause-menu">
             <div class="pause-content">
-                <div class="pause-title">已暂停</div>
-                <button class="pause-btn" onclick="Battle.resume()">继续战斗</button>
+                <div class="pause-title">暂停</div>
+                <button class="pause-btn" onclick="Battle.resume()">继续游戏</button>
                 <button class="pause-btn" onclick="Battle.restart()">重新开始</button>
-                <button class="pause-btn" onclick="Battle.quit()">返回主菜单</button>
+                <button class="pause-btn" onclick="Battle.quit()">退出关卡</button>
             </div>
         </div>
 
@@ -224,18 +225,17 @@
         <div id="gameover-menu">
             <div class="gameover-content">
                 <div class="gameover-title">GAME OVER</div>
-                <div class="gameover-stats"><div>波次：<span id="final-wave" style="color:var(--neon-blue)">0</span></div><div>击杀：<span id="final-score" style="color:var(--neon-orange)">0</span></div><div>最高等级：<span id="final-level" style="color:var(--neon-purple)">0</span></div></div>
-                <button class="pause-btn" onclick="Battle.restart()">再次挑战</button>
-                <button class="pause-btn" onclick="Battle.quit()">返回主菜单</button>
+                <div class="gameover-stats"><div>波次：<span id="final-wave" style="color:var(--neon-blue)">0</span></div><div>得分：<span id="final-score" style="color:var(--neon-orange)">0</span></div><div>等级：<span id="final-level" style="color:var(--neon-purple)">0</span></div></div>
+                <button class="pause-btn" onclick="Battle.restart()">再来一次</button>
+                <button class="pause-btn" onclick="Battle.quit()">返回菜单</button>
             </div>
         </div>
     </div>
 
     <script src="scripts/rogue-system-v2.js"></script>
     <script>
-<script>
 /**
- * 肉鸽升级系统 v2 - 自动锁定 + 自动射击 + 开局选道具
+ * 肉鸽系统 v2 - 自动锁定 + 自动射击 + 波次通关 + 星级评价
  * 版本：v3.2.0
  */
 
@@ -250,27 +250,33 @@ var RogueSystem = {
     autoShootTimer: 0,
     lockedEnemy: null,
     
+    // 🆕 波次系统
+    enemiesKilledInWave: 0,
+    ENEMIES_PER_WAVE: 10,
+    waveScore: 0,
+    baseHPAtWaveStart: 100,
+    
     skills: [
         { id: 'bullet_damage_1', name: '强力子弹 I', icon: '🔫', desc: '子弹伤害 +20%', rarity: 'common', type: 'passive', effect: { damage: 0.2 } },
         { id: 'bullet_damage_2', name: '强力子弹 II', icon: '🔫', desc: '子弹伤害 +40%', rarity: 'rare', type: 'passive', effect: { damage: 0.4 } },
         { id: 'bullet_speed_1', name: '速射子弹 I', icon: '💨', desc: '射击速度 +15%', rarity: 'common', type: 'passive', effect: { fireRate: 0.15 } },
         { id: 'bullet_speed_2', name: '速射子弹 II', icon: '💨', desc: '射击速度 +30%', rarity: 'rare', type: 'passive', effect: { fireRate: 0.3 } },
-        { id: 'bullet_pierce_1', name: '穿透子弹 I', icon: '📍', desc: '子弹穿透 +1', rarity: 'rare', type: 'passive', effect: { pierce: 1 } },
-        { id: 'bullet_pierce_2', name: '穿透子弹 II', icon: '📍', desc: '子弹穿透 +2', rarity: 'epic', type: 'passive', effect: { pierce: 2 } },
-        { id: 'bullet_size', name: '巨型子弹', icon: '🔴', desc: '子弹大小 +50%, 伤害 +30%', rarity: 'rare', type: 'passive', effect: { size: 0.5, damage: 0.3 } },
-        { id: 'element_fire', name: '火焰附加', icon: '🔥', desc: '子弹附带燃烧效果，持续伤害', rarity: 'epic', type: 'element', element: 'fire' },
-        { id: 'element_ice', name: '寒冰附加', icon: '❄️', desc: '子弹附带减速效果', rarity: 'epic', type: 'element', element: 'ice' },
-        { id: 'element_lightning', name: '闪电附加', icon: '⚡', desc: '子弹有几率触发连锁闪电', rarity: 'epic', type: 'element', element: 'lightning' },
-        { id: 'skill_wenya', name: '温压弹', icon: '💣', desc: '每 5 秒发射一枚温压弹，造成范围伤害', rarity: 'legendary', type: 'active', cooldown: 300 },
-        { id: 'skill_electric', name: '电磁穿刺', icon: '🔷', desc: '发射穿透敌人的电弧', rarity: 'legendary', type: 'active', cooldown: 200 },
-        { id: 'skill_vehicle', name: '装甲车', icon: '🚗', desc: '召唤装甲车碾压敌人', rarity: 'legendary', type: 'active', cooldown: 500 },
-        { id: 'passive_crit', name: '致命一击', icon: '💀', desc: '暴击率 +10%, 暴击伤害 +50%', rarity: 'epic', type: 'passive', effect: { critRate: 0.1, critDamage: 0.5 } },
-        { id: 'passive_gold', name: '幸运金币', icon: '💰', desc: '击杀获得金币 +25%', rarity: 'rare', type: 'passive', effect: { goldBonus: 0.25 } },
-        { id: 'passive_hp', name: '生命强化', icon: '❤️', desc: '基地血量上限 +30%', rarity: 'rare', type: 'passive', effect: { maxHP: 0.3 } },
-        { id: 'passive_regen', name: '基地修复', icon: '🔧', desc: '基地每秒恢复 1% 血量', rarity: 'epic', type: 'passive', effect: { regen: 0.01 } },
-        { id: 'starter_rapid', name: '急速射击', icon: '⚡', desc: '开局射击速度 +50%', rarity: 'rare', type: 'starter', effect: { fireRate: 0.5 } },
-        { id: 'starter_damage', name: '强力开局', icon: '💥', desc: '开局伤害 +30%', rarity: 'rare', type: 'starter', effect: { damage: 0.3 } },
-        { id: 'starter_hp', name: '坚固防御', icon: '🛡️', desc: '开局基地血量 +50%', rarity: 'rare', type: 'starter', effect: { maxHP: 0.5 } }
+        { id: 'bullet_pierce_1', name: '穿透子弹 I', icon: '🎯', desc: '子弹穿透 +1', rarity: 'rare', type: 'passive', effect: { pierce: 1 } },
+        { id: 'bullet_pierce_2', name: '穿透子弹 II', icon: '🎯', desc: '子弹穿透 +2', rarity: 'epic', type: 'passive', effect: { pierce: 2 } },
+        { id: 'bullet_size', name: '巨型子弹', icon: '🔵', desc: '子弹大小 +50%, 伤害 +30%', rarity: 'rare', type: 'passive', effect: { size: 0.5, damage: 0.3 } },
+        { id: 'element_fire', name: '火焰附魔', icon: '🔥', desc: '子弹附加火焰伤害，3 秒燃烧', rarity: 'epic', type: 'element', element: 'fire' },
+        { id: 'element_ice', name: '冰霜附魔', icon: '❄️', desc: '子弹附加冰霜减速', rarity: 'epic', type: 'element', element: 'ice' },
+        { id: 'element_lightning', name: '闪电附魔', icon: '⚡', desc: '子弹附加闪电链伤害', rarity: 'epic', type: 'element', element: 'lightning' },
+        { id: 'skill_wenya', name: '文雅', icon: '🐱', desc: '每 5 秒发射一只猫，追踪敌人', rarity: 'legendary', type: 'active', cooldown: 300 },
+        { id: 'skill_electric', name: '电磁脉冲', icon: '🛰️', desc: '释放电磁波，眩晕敌人', rarity: 'legendary', type: 'active', cooldown: 200 },
+        { id: 'skill_vehicle', name: '碾碎', icon: '🚗', desc: '召唤车辆碾过敌人', rarity: 'legendary', type: 'active', cooldown: 500 },
+        { id: 'passive_crit', name: '致命射击', icon: '💀', desc: '暴击率 +10%, 暴击伤害 +50%', rarity: 'epic', type: 'passive', effect: { critRate: 0.1, critDamage: 0.5 } },
+        { id: 'passive_gold', name: '赏金猎人 I', icon: '💰', desc: '金币获取 +25%', rarity: 'rare', type: 'passive', effect: { goldBonus: 0.25 } },
+        { id: 'passive_hp', name: '坚固堡垒', icon: '🛡️', desc: '基地最大生命值 +30%', rarity: 'rare', type: 'passive', effect: { maxHP: 0.3 } },
+        { id: 'passive_regen', name: '基地修复', icon: '🔧', desc: '基地生命回复 1 秒/1', rarity: 'epic', type: 'passive', effect: { regen: 0.01 } },
+        { id: 'starter_rapid', name: '急速射击', icon: '⚡', desc: '射击速度 +50%', rarity: 'rare', type: 'starter', effect: { fireRate: 0.5 } },
+        { id: 'starter_damage', name: '强力开局', icon: '💥', desc: '伤害 +30%', rarity: 'rare', type: 'starter', effect: { damage: 0.3 } },
+        { id: 'starter_hp', name: '坚固防御', icon: '🛡️', desc: '基地最大生命值 +50%', rarity: 'rare', type: 'starter', effect: { maxHP: 0.5 } }
     ],
     
     init: function() {
@@ -280,7 +286,7 @@ var RogueSystem = {
         window.addEventListener('resize', this.resize.bind(this));
         this.player = { x: this.canvas.width/2, y: this.canvas.height-100, angle: -Math.PI/2, shootTimer: 0, shootInterval: 15, color: '#00f3ff', damage: 1, fireRate: 1, pierce: 0, bulletSize: 1 };
         this.skillPool = JSON.parse(JSON.stringify(this.skills));
-        console.log('⚔️ 肉鸽系统 v2.0 初始化完成 - 自动锁定 + 自动射击');
+        console.log('⚔️ 肉鸽系统 v3.2.0 初始化完成 - 自动锁定 + 波次通关 + 星级评价');
     },
     
     resize: function() {
@@ -289,7 +295,6 @@ var RogueSystem = {
         if (this.player) { this.player.x = this.canvas.width/2; this.player.y = this.canvas.height-100; }
     },
     
-    // 查找最近敌人
     findNearestEnemy: function() {
         if (this.enemies.length === 0) return null;
         var nearest = null;
@@ -307,7 +312,6 @@ var RogueSystem = {
         return nearest;
     },
     
-    // 自动锁定并调整角度
     autoAim: function() {
         var target = this.findNearestEnemy();
         if (target) {
@@ -315,7 +319,6 @@ var RogueSystem = {
             var dx = target.x - this.player.x;
             var dy = target.y - this.player.y;
             var targetAngle = Math.atan2(dy, dx);
-            // 平滑转向
             var angleDiff = targetAngle - this.player.angle;
             while (angleDiff > Math.PI) angleDiff -= Math.PI * 2;
             while (angleDiff < -Math.PI) angleDiff += Math.PI * 2;
@@ -323,7 +326,6 @@ var RogueSystem = {
         }
     },
     
-    // 自动射击
     autoShoot: function() {
         if (this.player.shootTimer > 0) return;
         if (this.lockedEnemy) {
@@ -343,9 +345,19 @@ var RogueSystem = {
         this.player.shootTimer = Math.floor(this.player.shootInterval / this.player.fireRate);
     },
     
+    // 🆕 v3.2.0 - 降低难度：血量 -50%, 速度 -30%
     spawnEnemy: function() {
         var size = 30 + Math.random()*20;
-        this.enemies.push({ x: Math.random()*(this.canvas.width-size*2)+size, y: -size, width: size, height: size, speed: 1+Math.random()*2+this.wave*0.3, hp: 1+Math.floor(this.wave/3), maxHp: 1+Math.floor(this.wave/3), color: '#ff4444' });
+        this.enemies.push({ 
+            x: Math.random()*(this.canvas.width-size*2)+size, 
+            y: -size, 
+            width: size, 
+            height: size, 
+            speed: (1+Math.random()*2+this.wave*0.1) * 0.7,  // ⬇️ 速度降低 30%
+            hp: (1+Math.floor(this.wave/3)) * 0.5,  // ⬇️ 血量降低 50%
+            maxHp: (1+Math.floor(this.wave/3)) * 0.5, 
+            color: '#ff4444' 
+        });
     },
     
     spawnParticles: function(x, y, color, count) {
@@ -372,12 +384,10 @@ var RogueSystem = {
     },
     
     showStartSelect: function() {
-        // 显示开局选择弹窗
         var modal = document.getElementById('start-select-modal');
         var cardsContainer = document.getElementById('start-skill-cards');
         cardsContainer.innerHTML = '';
         
-        // 从 starter 类型技能中选 3 个
         var starters = this.skills.filter(function(s) { return s.type === 'starter'; });
         var options = starters.sort(function() { return 0.5 - Math.random(); }).slice(0, 3);
         
@@ -385,7 +395,7 @@ var RogueSystem = {
         options.forEach(function(skill) {
             var card = document.createElement('div');
             card.className = 'skill-card ' + skill.rarity;
-            card.innerHTML = '<div class="skill-icon">' + skill.icon + '</div><div class="skill-name">' + skill.name + '</div><div class="skill-desc">' + skill.desc + '</div><div class="skill-rarity">' + skill.rarity + '</div>';
+            card.innerHTML = '<div class="skill-icon">'+ skill.icon +'</div><div class="skill-name">'+ skill.name +'</div><div class="skill-desc">'+ skill.desc +'</div><div class="skill-rarity">'+ skill.rarity +'</div>';
             card.onclick = function() { self.selectStartSkill(skill); };
             cardsContainer.appendChild(card);
         });
@@ -409,7 +419,7 @@ var RogueSystem = {
         var modal = document.getElementById('levelup-modal');
         var levelText = document.getElementById('levelup-level');
         var cardsContainer = document.getElementById('skill-cards');
-        levelText.textContent = '当前等级：' + this.playerLevel;
+        levelText.textContent = '升级到'+ this.playerLevel;
         cardsContainer.innerHTML = '';
         
         var options = this.getRandomSkills(3);
@@ -417,7 +427,7 @@ var RogueSystem = {
         options.forEach(function(skill) {
             var card = document.createElement('div');
             card.className = 'skill-card ' + skill.rarity;
-            card.innerHTML = '<div class="skill-icon">' + skill.icon + '</div><div class="skill-name">' + skill.name + '</div><div class="skill-desc">' + skill.desc + '</div><div class="skill-rarity">' + skill.rarity + '</div>';
+            card.innerHTML = '<div class="skill-icon">'+ skill.icon +'</div><div class="skill-name">'+ skill.name +'</div><div class="skill-desc">'+ skill.desc +'</div><div class="skill-rarity">'+ skill.rarity +'</div>';
             card.onclick = function() { self.selectSkill(skill); };
             cardsContainer.appendChild(card);
         });
@@ -448,10 +458,8 @@ var RogueSystem = {
     update: function() {
         if (!this.running || this.paused) return;
         
-        // 自动锁定
         this.autoAim();
         
-        // 自动射击
         this.autoShootTimer++;
         if (this.autoShootTimer >= 5) {
             this.autoShoot();
@@ -483,7 +491,21 @@ var RogueSystem = {
                     if (e.hp <= 0) {
                         this.enemies.splice(i, 1); this.score++; this.addExp(10);
                         this.spawnParticles(e.x, e.y, '#ff6b35', 8); this.updateUI();
-                        if (this.score % 10 === 0) { this.wave++; this.enemySpawnInterval = Math.max(20, 60-this.wave*5); this.updateUI(); }
+                        
+                        // 🆕 v3.2.0 - 波次系统
+                        this.enemiesKilledInWave++;
+                        this.waveScore += 10;
+                        
+                        if (this.score % 10 === 0) { 
+                            this.wave++; 
+                            this.enemySpawnInterval = Math.max(20, 60-this.wave*5); 
+                            this.updateUI();
+                            
+                            // 🆕 每 10 波显示通关 UI
+                            if (this.enemiesKilledInWave >= this.ENEMIES_PER_WAVE) {
+                                this.showLevelComplete();
+                            }
+                        }
                     }
                     break;
                 }
@@ -500,18 +522,9 @@ var RogueSystem = {
         this.ctx.fillStyle = 'rgba(10,10,15,0.3)'; this.ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
         if (!this.running) return;
         
-        // 绘制玩家
         this.ctx.save(); this.ctx.translate(this.player.x, this.player.y); this.ctx.rotate(this.player.angle);
         this.ctx.fillStyle = this.player.color; this.ctx.beginPath(); this.ctx.moveTo(20,0); this.ctx.lineTo(-15,-15); this.ctx.lineTo(-15,15); this.ctx.closePath(); this.ctx.fill();
-        // 绘制锁定线
-        if (this.lockedEnemy) {
-            this.ctx.strokeStyle = 'rgba(255, 0, 0, 0.5)';
-            this.ctx.lineWidth = 2;
-            this.ctx.beginPath();
-            this.ctx.moveTo(0, 0);
-            this.ctx.lineTo(this.lockedEnemy.x - this.player.x, this.lockedEnemy.y - this.player.y);
-            this.ctx.stroke();
-        }
+        // ❌ v3.2.0 - 去掉红色探测线
         this.ctx.restore();
         
         for (var i = 0; i < this.bullets.length; i++) { var b = this.bullets[i]; this.ctx.fillStyle = b.color; this.ctx.beginPath(); this.ctx.arc(b.x, b.y, b.radius, 0, Math.PI*2); this.ctx.fill(); }
@@ -527,6 +540,12 @@ var RogueSystem = {
         this.playerLevel = 1; this.playerExp = 0; this.expToNextLevel = 100;
         this.bullets = []; this.enemies = []; this.particles = []; this.enemySpawnInterval = 60;
         this.selectedSkills = [];
+        
+        // 🆕 v3.2.0 - 波次系统初始化
+        this.enemiesKilledInWave = 0;
+        this.waveScore = 0;
+        this.baseHPAtWaveStart = this.baseHP;
+        
         document.getElementById('main-menu').classList.remove('active');
         document.getElementById('game-canvas').classList.add('active');
         document.getElementById('battle-ui').classList.add('active');
@@ -535,7 +554,7 @@ var RogueSystem = {
         document.getElementById('levelup-modal').classList.remove('active');
         this.updateUI();
         this.updateExpUI();
-        console.log('🎮 战斗开始 - 自动锁定模式');
+        console.log('🎮 开始游戏 - 自动锁定 + 自动射击');
     },
     
     pause: function() { this.paused = true; document.getElementById('pause-menu').style.display = 'flex'; },
@@ -550,6 +569,45 @@ var RogueSystem = {
         document.getElementById('battle-ui').classList.remove('active');
     },
     
+    // 🆕 v3.2.0 - 显示通关 UI
+    showLevelComplete: function() {
+        this.paused = true;
+        
+        var modal = document.getElementById('level-complete-modal');
+        var waveText = document.getElementById('complete-wave');
+        var waveScoreText = document.getElementById('wave-score');
+        
+        waveText.textContent = '第 ' + this.wave + ' 波';
+        waveScoreText.textContent = this.waveScore;
+        
+        // 计算星级
+        var hpLost = this.baseHPAtWaveStart - this.baseHP;
+        var maxHealthLoss = Math.floor(this.baseHPAtWaveStart / 2);
+        var stars = 3;
+        var comment = '完美无伤！';
+        
+        if (hpLost > 0 && hpLost < maxHealthLoss) {
+            stars = 2;
+            comment = '轻微损伤！';
+        } else if (hpLost >= maxHealthLoss) {
+            stars = 1;
+            comment = '险胜！';
+        }
+        
+        // 显示星级
+        var starElements = document.querySelectorAll('#star-rating .star');
+        starElements.forEach(function(star, i) {
+            if (i < stars) {
+                star.classList.add('filled');
+            } else {
+                star.classList.remove('filled');
+            }
+        });
+        
+        document.getElementById('star-comment').textContent = comment;
+        modal.classList.add('active');
+    },
+    
     updateUI: function() {
         document.getElementById('base-hp').style.width = (this.baseHP/this.maxBaseHP*100) + '%';
         document.getElementById('wave-num').textContent = this.wave;
@@ -559,13 +617,14 @@ var RogueSystem = {
     updateExpUI: function() {
         var percent = (this.playerExp / this.expToNextLevel * 100);
         document.getElementById('exp-fill').style.width = percent + '%';
-        document.getElementById('exp-text').textContent = 'LV.' + this.playerLevel + ' ' + Math.floor(this.playerExp) + '/' + this.expToNextLevel;
+        document.getElementById('exp-text').textContent = 'LV.'+ this.playerLevel +' '+ Math.floor(this.playerExp) +'/'+ this.expToNextLevel;
     },
     
     restart: function() { document.getElementById('pause-menu').style.display = 'none'; document.getElementById('gameover-menu').style.display = 'none'; this.startBattle(); },
-    quit: function() { this.running = false; this.canvas.classList.remove('active'); document.getElementById('battle-ui').classList.remove('active'); document.getElementById('pause-menu').style.display = 'none'; document.getElementById('gameover-menu').style.display = 'none'; document.getElementById('levelup-modal').classList.remove('active'); document.getElementById('start-select-modal').classList.remove('active'); Scene.switchTo('main-menu'); }
+    quit: function() { this.running = false; this.canvas.classList.remove('active'); this.battleUI.classList.remove('active'); document.getElementById('pause-menu').style.display = 'none'; document.getElementById('gameover-menu').style.display = 'none'; document.getElementById('levelup-modal').classList.remove('active'); document.getElementById('level-complete-modal').classList.remove('active'); document.getElementById('start-select-modal').classList.remove('active'); Scene.switchTo('main-menu'); }
 };
 </script>
+        <script>
         var Scene = {
             currentScene: 'loading', history: [],
             switchTo: function(id) {
@@ -615,6 +674,16 @@ var RogueSystem = {
                 document.getElementById('btn-shop').onclick = function() { Scene.switchTo('shop-screen'); };
                 document.getElementById('btn-settings').onclick = function() { Scene.switchTo('settings-screen'); };
                 document.getElementById('btn-pause').onclick = function() { Battle.pause(); };
+                
+                // 🆕 v3.2.0 - 通关 UI 按钮
+                document.getElementById('btn-next-wave').onclick = function() {
+                    document.getElementById('level-complete-modal').classList.remove('active');
+                    Battle.enemiesKilledInWave = 0;
+                    Battle.waveScore = 0;
+                    Battle.baseHPAtWaveStart = Battle.baseHP;
+                    Battle.paused = false;
+                };
+                document.getElementById('btn-quit-wave').onclick = function() { Battle.quit(); };
             }
         };
 
